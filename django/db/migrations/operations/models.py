@@ -141,11 +141,10 @@ class CreateModel(ModelOperation):
                 CreateModel(
                     self.name,
                     fields=self.fields,
-                    options={**self.options, **operation.options},
+                    options={key: operation.options[key] if key in operation.options else self.options[key] for key in self.options},
                     bases=self.bases,
                     managers=self.managers,
-                ),
-            ]
+                ),            ]
         elif isinstance(operation, AlterTogetherOptionOperation) and self.name_lower == operation.name_lower:
             return [
                 CreateModel(
