@@ -37,8 +37,7 @@ class DatabaseClient(BaseDatabaseClient):
             args += [dbname]
 
         env = {}
-        if passwd:
-            env["PGPASSWORD"] = str(passwd)
+        if passwd:            env["PGPASSWORD"] = str(passwd)
         if service:
             env["PGSERVICE"] = str(service)
         if sslmode:
