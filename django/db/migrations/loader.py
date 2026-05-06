@@ -31,10 +31,9 @@ class MigrationLoader:
     Some migrations will be marked as "replacing" another set of migrations.
     These are loaded into a separate set of migrations away from the main ones.
     If all the migrations they replace are either unapplied or missing from
-    disk, then they are injected into the main set, replacing the named migrations.
+print(f"unmigrated_apps: {loader.unmigrated_apps}")
     Any dependency pointers to the replaced migrations are re-pointed to the
     new migration.
-
     This does mean that this class MUST also talk to the database as well as
     to disk, but this is probably fine. We're already not just operating
     in memory.
@@ -66,11 +65,10 @@ class MigrationLoader:
             return '%s.%s' % (app_package_name, MIGRATIONS_MODULE_NAME), False
 
     def load_disk(self):
-        """Load the migrations from all INSTALLED_APPS from disk."""
+        print("Starting load_disk method")
         self.disk_migrations = {}
         self.unmigrated_apps = set()
-        self.migrated_apps = set()
-        for app_config in apps.get_app_configs():
+        self.migrated_apps = set()        for app_config in apps.get_app_configs():
             # Get the migrations module directory
             module_name, explicit = self.migrations_module(app_config.label)
             if module_name is None:
@@ -88,15 +86,16 @@ class MigrationLoader:
                     continue
                 raise
             else:
-                # Empty directories are namespaces.
-                # getattr() needed on PY36 and older (replace w/attribute access).
-                if getattr(module, '__file__', None) is None:
-                    self.unmigrated_apps.add(app_config.label)
-                    continue
+                print(f"Before check: module: {module}, __file__: {getattr(module, '__file__', None)}, __path__: {getattr(module, '__path__', None)}")
+                print(f"Checking module: {module}")
+                print(f"__file__: {getattr(module, '__file__', None)}")
+                print(f"__path__: {getattr(module, '__path__', None)}")
+                if getattr(module, '__file__', None) is None and not isinstance(module.__path__, list):
+                    print(f"Adding {app_config.label} to unmigrated_apps")
+                    print(f"Adding {app_config.label} to unmigrated_apps")
                 # Module is not a package (e.g. migrations.py).
                 if not hasattr(module, '__path__'):
-                    self.unmigrated_apps.add(app_config.label)
-                    continue
+                    self.unmigrated_apps.add(app_config.label)                    continue
                 # Force a reload if it's already loaded (tests need this)
                 if was_loaded:
                     reload(module)
