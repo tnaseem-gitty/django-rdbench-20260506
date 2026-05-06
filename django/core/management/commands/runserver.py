@@ -147,7 +147,7 @@ class Command(BaseCommand):
                 "version": self.get_version(),
                 "settings": settings.SETTINGS_MODULE,
                 "protocol": self.protocol,
-                "addr": "[%s]" % self.addr if self._raw_ipv6 else self.addr,
+                "addr": "[%s]" % self.addr if self._raw_ipv6 else "::" if self.use_ipv6 and self.addr == "0" else "0.0.0.0" if self.addr == "0" else self.addr,
                 "port": self.port,
                 "quit_command": quit_command,
             }
@@ -156,7 +156,7 @@ class Command(BaseCommand):
         try:
             handler = self.get_handler(*args, **options)
             run(
-                self.addr,
+                "0.0.0.0" if self.addr == "0" and not self.use_ipv6 else "::" if self.addr == "0" and self.use_ipv6 else self.addr,
                 int(self.port),
                 handler,
                 ipv6=self.use_ipv6,
