@@ -362,11 +362,10 @@ class Command(BaseCommand):
         current directory.
         """
         dirs = []
-        fixture_dirs = settings.FIXTURE_DIRS
+        fixture_dirs = [str(fixture_dir) for fixture_dir in settings.FIXTURE_DIRS]
         if len(fixture_dirs) != len(set(fixture_dirs)):
             raise ImproperlyConfigured("settings.FIXTURE_DIRS contains duplicates.")
-        for app_config in apps.get_app_configs():
-            app_label = app_config.label
+        for app_config in apps.get_app_configs():            app_label = app_config.label
             app_dir = os.path.join(app_config.path, "fixtures")
             if app_dir in [str(d) for d in fixture_dirs]:
                 raise ImproperlyConfigured(
