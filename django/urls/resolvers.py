@@ -69,6 +69,11 @@ def get_resolver(urlconf=None):
         urlconf = settings.ROOT_URLCONF
     return URLResolver(RegexPattern(r'^/'), urlconf)
 
+def cached_get_resolver(urlconf=None):
+    if urlconf is None:
+        urlconf = settings.ROOT_URLCONF
+    return get_resolver(urlconf)
+
 
 @functools.lru_cache(maxsize=None)
 def get_ns_resolver(ns_pattern, resolver, converters):

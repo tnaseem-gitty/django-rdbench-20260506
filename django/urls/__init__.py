@@ -8,7 +8,7 @@ from .converters import register_converter
 from .exceptions import NoReverseMatch, Resolver404
 from .resolvers import (
     LocalePrefixPattern, ResolverMatch, URLPattern, URLResolver,
-    get_ns_resolver, get_resolver,
+    get_ns_resolver, cached_get_resolver as get_resolver,
 )
 from .utils import get_callable, get_mod_func
 
