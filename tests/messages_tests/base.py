@@ -96,11 +96,16 @@ class BaseTests:
             f'<{self.storage_class.__qualname__}: request=<HttpRequest>>',
         )
 
-    def test_add(self):
+    def test_level_tags_update(self):
+        with override_settings_tags(MESSAGE_TAGS={constants.DEBUG: 'debug-tag'}):
+            storage = self.get_storage()
+            print("LEVEL_TAGS:", base.LEVEL_TAGS)
+            storage.add(constants.DEBUG, 'A debugging message')
+            message = storage._loaded_data[0]
+            self.assertEqual(message.level_tag, 'debug-tag')
         storage = self.get_storage()
         self.assertFalse(storage.added_new)
-        storage.add(constants.INFO, 'Test message 1')
-        self.assertTrue(storage.added_new)
+        storage.add(constants.INFO, 'Test message 1')        self.assertTrue(storage.added_new)
         storage.add(constants.INFO, 'Test message 2', extra_tags='tag')
         self.assertEqual(len(storage), 2)
 
