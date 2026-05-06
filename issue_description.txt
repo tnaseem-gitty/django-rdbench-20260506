@@ -1,0 +1,37 @@
+Title: FilteredRelation doesn't work as expected with ~Q()
+
+Description:
+When using FilteredRelation with ~Q(), the ORM is unable to resolve the field name correctly, leading to a FieldError. This issue was discovered while investigating a problem reported by a user (link to original issue if available).
+
+Steps to reproduce:
+1. Create a FilteredRelation annotation on a queryset
+2. Apply a filter using ~Q() on the annotated field
+
+Expected behavior:
+The query should execute successfully, filtering out the records where the FilteredRelation condition is met.
+
+Actual behavior:
+A FieldError is raised, stating that the annotated field name cannot be resolved.
+
+Workaround:
+Instead of using ~Q(filtered_relation__isnull=False), use Q(filtered_relation__isnull=True).
+
+Example:
+```python
+# This raises a FieldError
+qs = Author.objects.annotate(
+    book_alice=FilteredRelation('book', condition=Q(book__title__iexact='poem by alice'))
+).filter(~Q(book_alice__isnull=False))
+
+# This works as expected
+qs = Author.objects.annotate(
+    book_alice=FilteredRelation('book', condition=Q(book__title__iexact='poem by alice'))
+).filter(Q(book_alice__isnull=True))
+```
+
+Proposed solution:
+Investigate why ~Q() is not being properly resolved when used with FilteredRelation and implement a fix to allow this usage.
+
+Additional notes:
+This limitation has been documented in the Django 4.2 release notes as a backwards incompatible change. However, a proper fix should be implemented in a future release to allow the intuitive usage of ~Q() with FilteredRelation.
+
