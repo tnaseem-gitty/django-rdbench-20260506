@@ -234,11 +234,10 @@ class Collector:
         """
         return related.related_model._base_manager.using(self.using).filter(
             **{"%s__in" % related.field.name: objs}
-        )
+        ).only('id')  # Fetch only the 'id' field to avoid unnecessary data
 
     def instances_with_model(self):
-        for model, instances in self.data.items():
-            for obj in instances:
+        for model, instances in self.data.items():            for obj in instances:
                 yield model, obj
 
     def sort(self):
