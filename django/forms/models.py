@@ -573,9 +573,10 @@ class BaseModelFormSet(BaseFormSet):
     unique_fields = set()
 
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
-                 queryset=None, *, initial=None, **kwargs):
+                 queryset=None, *, initial=None, can_create=True, **kwargs):
         self.queryset = queryset
         self.initial_extra = initial
+        self.can_create = can_create
         super().__init__(**{'data': data, 'files': files, 'auto_id': auto_id, 'prefix': prefix, **kwargs})
 
     def initial_form_count(self):
@@ -653,6 +654,8 @@ class BaseModelFormSet(BaseFormSet):
 
     def save_new(self, form, commit=True):
         """Save and return a new model instance for the given form."""
+        if not getattr(self, 'can_create', True):
+            raise ValueError("This formset does not allow creating new instances.")
         return form.save(commit=commit)
 
     def save_existing(self, form, instance, commit=True):
@@ -676,7 +679,11 @@ class BaseModelFormSet(BaseFormSet):
                 for form in self.saved_forms:
                     form.save_m2m()
             self.save_m2m = save_m2m
-        return self.save_existing_objects(commit) + self.save_new_objects(commit)
+
+        saved_instances = self.save_existing_objects(commit)
+        if getattr(self, 'can_create', True):
+            saved_instances += self.save_new_objects(commit)
+        return saved_instances
 
     save.alters_data = True
 
@@ -812,6 +819,8 @@ class BaseModelFormSet(BaseFormSet):
         return saved_instances
 
     def save_new_objects(self, commit=True):
+        if not getattr(self, 'can_create', True):
+            return []
         self.new_objects = []
         for form in self.extra_forms:
             if not form.has_changed():
@@ -875,8 +884,13 @@ def modelformset_factory(model, form=ModelForm, formfield_callback=None,
                          widgets=None, validate_max=False, localized_fields=None,
                          labels=None, help_texts=None, error_messages=None,
                          min_num=None, validate_min=False, field_classes=None,
-                         absolute_max=None, can_delete_extra=True, renderer=None):
-    """Return a FormSet class for the given Django model class."""
+                         absolute_max=None, can_delete_extra=True, renderer=None,
+                         can_create=True):
+    """
+    Return a FormSet class for the given Django model class.
+
+    :param can_create: If set to False, the formset will not allow adding new objects.
+    """
     meta = getattr(form, 'Meta', None)
     if (getattr(meta, 'fields', fields) is None and
             getattr(meta, 'exclude', exclude) is None):
@@ -890,12 +904,13 @@ def modelformset_factory(model, form=ModelForm, formfield_callback=None,
                              widgets=widgets, localized_fields=localized_fields,
                              labels=labels, help_texts=help_texts,
                              error_messages=error_messages, field_classes=field_classes)
-    FormSet = formset_factory(form, formset, extra=extra, min_num=min_num, max_num=max_num,
+    FormSet = formset_factory(form, formset, extra=extra if can_create else 0, min_num=min_num, max_num=max_num,
                               can_order=can_order, can_delete=can_delete,
                               validate_min=validate_min, validate_max=validate_max,
                               absolute_max=absolute_max, can_delete_extra=can_delete_extra,
                               renderer=renderer)
     FormSet.model = model
+    FormSet.can_create = can_create
     return FormSet
 
 

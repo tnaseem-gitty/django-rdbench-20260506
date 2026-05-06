@@ -825,6 +825,19 @@ instances of the model, you can specify an empty QuerySet::
 
    >>> AuthorFormSet(queryset=Author.objects.none())
 
+Preventing the creation of new objects
+--------------------------------------
+
+By default, model formsets allow the creation of new objects. You can use the
+``can_create`` parameter to prevent this:
+
+   >>> AuthorFormSet = modelformset_factory(Author, fields=('name', 'title'), can_create=False)
+   >>> formset = AuthorFormSet(queryset=Author.objects.all())
+
+When ``can_create`` is set to ``False``, the formset will not allow new objects
+to be created, even if the data for a new object is submitted. This can be
+useful when you want to provide an "edit only" view of existing objects.
+
 Changing the form
 -----------------
 
