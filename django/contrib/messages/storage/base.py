@@ -3,6 +3,9 @@ from django.contrib.messages import constants, utils
 
 LEVEL_TAGS = utils.get_level_tags()
 
+def get_level_tags():
+    return utils.get_level_tags()
+
 
 class Message:
     """
@@ -38,7 +41,7 @@ class Message:
 
     @property
     def level_tag(self):
-        return LEVEL_TAGS.get(self.level, '')
+        return get_level_tags().get(self.level, '')
 
 
 class BaseStorage:
