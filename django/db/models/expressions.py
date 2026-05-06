@@ -1384,10 +1384,11 @@ class Case(SQLiteNumericMixin, Expression):
         case_parts = []
         sql_params = []
         for case in self.cases:
+            if isinstance(case.condition, Q) and not case.condition.children:
+                continue  # Skip empty conditions
             try:
                 case_sql, case_params = compiler.compile(case)
-            except EmptyResultSet:
-                continue
+            except EmptyResultSet:                continue
             case_parts.append(case_sql)
             sql_params.extend(case_params)
         default_sql, default_params = compiler.compile(self.default)
@@ -1402,10 +1403,93 @@ class Case(SQLiteNumericMixin, Expression):
         if self._output_field_or_none is not None:
             sql = connection.ops.unification_cast_sql(self.output_field) % sql
         return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        sql_params.extend(default_params)
+        template = template or template_params.get("template", self.template)
+        sql = template % template_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
+        if self._output_field_or_none is not None:
+            sql = connection.ops.unification_cast_sql(self.output_field) % sql
+        return sql, sql_params
 
     def get_group_by_cols(self, alias=None):
-        if not self.cases:
-            return self.default.get_group_by_cols(alias)
+        if not self.cases:            return self.default.get_group_by_cols(alias)
         return super().get_group_by_cols(alias)
 
 
