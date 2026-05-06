@@ -219,13 +219,10 @@ def get_child_arguments():
     import __main__
     py_script = Path(sys.argv[0])
 
-    args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions]
-    # __spec__ is set when the server was started with the `-m` option,
-    # see https://docs.python.org/3/reference/import.html#main-spec
+    args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + [f'-X utf8' if key == 'utf8' else f'-X{key}={value}' for key, value in sys._xoptions.items()]
     # __spec__ may not exist, e.g. when running in a Conda env.
     if getattr(__main__, '__spec__', None) is not None:
-        spec = __main__.__spec__
-        if (spec.name == '__main__' or spec.name.endswith('.__main__')) and spec.parent:
+        spec = __main__.__spec__        if (spec.name == '__main__' or spec.name.endswith('.__main__')) and spec.parent:
             name = spec.parent
         else:
             name = spec.name
