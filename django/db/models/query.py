@@ -1224,15 +1224,14 @@ class QuerySet:
             return True
         if self.query.extra_order_by or self.query.order_by:
             return True
-        elif self.query.default_ordering and self.query.get_meta().ordering:
-            return True
-        else:
+        if self.query.group_by:
             return False
-
+        if self.query.default_ordering and self.query.get_meta().ordering:
+            return True
+        return False
     @property
     def db(self):
-        """Return the database used if this query is executed now."""
-        if self._for_write:
+        """Return the database used if this query is executed now."""        if self._for_write:
             return self._db or router.db_for_write(self.model, **self._hints)
         return self._db or router.db_for_read(self.model, **self._hints)
 
