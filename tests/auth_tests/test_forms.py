@@ -14,6 +14,44 @@ from django.contrib.auth.forms import (
     UserChangeForm,
     UserCreationForm,
 )
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.signals import user_login_failed
+from django.contrib.sites.models import Site
+from django.core import mail
+from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
+from django.forms import forms
+from django.forms.fields import CharField, Field, IntegerField
+from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
+from django.utils import translation
+from django.utils.text import capfirst
+from django.utils.translation import gettext as _
+from django.db import models
+
+from .models.custom_user import (
+    CustomUser,
+    CustomUserWithoutIsActiveField,
+    ExtensionUser,
+)
+from .models.with_custom_email_field import CustomEmailField
+from .models.with_integer_username import IntegerUsernameUser
+from .settings import AUTH_TEMPLATES
+import re
+import urllib.parse
+from unittest import mock
+
+from django.contrib.auth.forms import (
+    AdminPasswordChangeForm,
+    AuthenticationForm,
+    PasswordChangeForm,
+    PasswordResetForm,
+    ReadOnlyPasswordHashField,
+    ReadOnlyPasswordHashWidget,
+    SetPasswordForm,
+    UserChangeForm,
+    UserCreationForm,
+)
 from django.contrib.auth.models import User
 from django.contrib.auth.signals import user_login_failed
 from django.contrib.sites.models import Site
@@ -335,8 +373,36 @@ class UserCreationFormTest(TestDataMixin, TestCase):
                 )
 
 
-# To verify that the login form rejects inactive users, use an authentication
-# backend that allows them.
+    def test_save_many_to_many_fields(self):
+        class GroupWithM2M(Group):
+            users = models.ManyToManyField(User, related_name='custom_groups')
+
+        class CustomUserCreationForm(UserCreationForm):
+            groups = forms.ModelMultipleChoiceField(queryset=GroupWithM2M.objects.all(), required=False)
+
+            class Meta(UserCreationForm.Meta):
+                model = User
+                fields = ("username", "groups")
+
+        group1 = GroupWithM2M.objects.create(name='Group 1')
+        group2 = GroupWithM2M.objects.create(name='Group 2')
+
+        form_data = {
+            'username': 'testuser',
+            'password1': 'testpass123',
+            'password2': 'testpass123',
+            'groups': [group1.pk, group2.pk],
+        }
+
+        form = CustomUserCreationForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        user = form.save()
+
+        self.assertEqual(user.custom_groups.count(), 2)
+        self.assertIn(group1, user.custom_groups.all())
+        self.assertIn(group2, user.custom_groups.all())
+
+
 @override_settings(
     AUTHENTICATION_BACKENDS=["django.contrib.auth.backends.AllowAllUsersModelBackend"]
 )
