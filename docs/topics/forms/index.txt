@@ -443,6 +443,14 @@ the validated form data will be in the ``form.cleaned_data`` dictionary. This
 data will have been nicely converted into Python types for you.
 
 .. note::
+   The ``cleaned_data`` dictionary can overwrite a field's default value (set by the ``initial`` parameter or a model field's ``default``).
+   If a field is not present in the form submission (e.g., it was removed from the payload),
+   its value in ``cleaned_data`` will be ``None``, effectively overwriting any default.
+
+In the above example, ``cc_myself`` will be a boolean value. Likewise, fields
+data will have been nicely converted into Python types for you.
+
+.. note::
 
     You can still access the unvalidated data directly from ``request.POST`` at
     this point, but the validated data is better.
