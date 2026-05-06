@@ -1,0 +1,49 @@
+==========================
+Django 3.2 release notes
+==========================
+
+*Expected release date: TBA*
+
+Django 3.2 adds support for ... [This part would typically be filled in by the Django team]
+
+.. contents::
+   :local:
+   :depth: 2
+
+Python compatibility
+====================
+
+Django 3.2 supports Python 3.6, 3.7, 3.8, and 3.9.
+
+What's new in Django 3.2
+========================
+
+[This section would typically include major new features]
+
+Minor features
+==============
+
+[This section would typically include minor new features]
+
+Bugfixes
+========
+
+* Fixed a bug in `Query.resolve_lookup_value()` where list values were being coerced to tuples, 
+  breaking exact value queries for fields that are dependent on matching input types (e.g., PickledField).
+  The method now preserves the original type (list or tuple) of the input value.
+
+Backwards incompatible changes in 3.2
+=====================================
+
+[This section would typically include any backwards incompatible changes]
+
+Features deprecated in 3.2
+==========================
+
+[This section would typically include any deprecated features]
+
+Features removed in 3.2
+=======================
+
+[This section would typically include any removed features]
+
