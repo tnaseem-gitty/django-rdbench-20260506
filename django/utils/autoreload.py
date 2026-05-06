@@ -216,16 +216,16 @@ def get_child_arguments():
     executable is reported to not have the .exe extension which can cause bugs
     on reloading.
     """
+    import __main__
     import django.__main__
     django_main_path = Path(django.__main__.__file__)
     py_script = Path(sys.argv[0])
 
     args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions]
-    if py_script == django_main_path:
+    if getattr(__main__.__spec__, 'parent', None) == 'django':
         # The server was started with `python -m django runserver`.
         args += ['-m', 'django']
-        args += sys.argv[1:]
-    elif not py_script.exists():
+        args += sys.argv[1:]    elif not py_script.exists():
         # sys.argv[0] may not exist for several reasons on Windows.
         # It may exist with a .exe extension or have a -script.py suffix.
         exe_entrypoint = py_script.with_suffix('.exe')
