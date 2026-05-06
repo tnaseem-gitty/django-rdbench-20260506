@@ -62,11 +62,10 @@ and two directions (forward and reverse) for a total of six combinations.
    If you're looking for ``ForwardManyToManyDescriptor`` or
    ``ReverseManyToManyDescriptor``, use ``ManyToManyDescriptor`` instead.
 """
-
+from asgiref.sync import sync_to_async
 from django.core.exceptions import FieldError
 from django.db import (
-    DEFAULT_DB_ALIAS,
-    NotSupportedError,
+    DEFAULT_DB_ALIAS,    NotSupportedError,
     connections,
     router,
     transaction,
@@ -794,24 +793,29 @@ def create_reverse_many_to_one_manager(superclass, rel):
         create.alters_data = True
 
         def get_or_create(self, **kwargs):
-            self._check_fk_val()
-            kwargs[self.field.name] = self.instance
-            db = router.db_for_write(self.model, instance=self.instance)
-            return super(RelatedManager, self.db_manager(db)).get_or_create(**kwargs)
+            async def acreate(self, **kwargs):
+                return await sync_to_async(self.create)(**kwargs)
 
-        get_or_create.alters_data = True
+            acreate.alters_data = True
 
-        def update_or_create(self, **kwargs):
-            self._check_fk_val()
-            kwargs[self.field.name] = self.instance
-            db = router.db_for_write(self.model, instance=self.instance)
-            return super(RelatedManager, self.db_manager(db)).update_or_create(**kwargs)
+            async def aget_or_create(self, **kwargs):
+                self._check_fk_val()
+                kwargs[self.field.name] = self.instance
+                db = router.db_for_write(self.model, instance=self.instance)
+                return await sync_to_async(super(RelatedManager, self.db_manager(db)).get_or_create)(**kwargs)
 
-        update_or_create.alters_data = True
+            aget_or_create.alters_data = True
+
+            async def aupdate_or_create(self, **kwargs):
+                self._check_fk_val()
+                kwargs[self.field.name] = self.instance
+                db = router.db_for_write(self.model, instance=self.instance)
+                return await sync_to_async(super(RelatedManager, self.db_manager(db)).update_or_create)(**kwargs)
+
+            aupdate_or_create.alters_data = True
 
         # remove() and clear() are only provided if the ForeignKey can have a
-        # value of null.
-        if rel.field.null:
+        # value of null.        if rel.field.null:
 
             def remove(self, *objs, bulk=True):
                 if not objs:
