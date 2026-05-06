@@ -471,6 +471,8 @@ class QuerySet:
         fields = opts.concrete_fields
         objs = list(objs)
         self._populate_pk_values(objs)
+        max_batch_size = connection.ops.bulk_batch_size(['pk'] + list(fields), objs)
+        batch_size = min(batch_size, max_batch_size) if batch_size else max_batch_size
         with transaction.atomic(using=self.db, savepoint=False):
             objs_with_pk, objs_without_pk = partition(lambda o: o.pk is None, objs)
             if objs_with_pk:
