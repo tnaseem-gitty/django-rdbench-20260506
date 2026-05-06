@@ -40,11 +40,10 @@ def _multi_decorate(decorators, method):
         bound_method = partial(method.__get__(self, type(self)))
         for dec in decorators:
             bound_method = dec(bound_method)
-        return bound_method(*args, **kwargs)
+        update_wrapper(bound_method, method)
 
     # Copy any attributes that a decorator adds to the function it decorates.
-    for dec in decorators:
-        _update_method_wrapper(_wrapper, dec)
+    for dec in decorators:        _update_method_wrapper(_wrapper, dec)
     # Preserve any existing attributes of 'method', including the name.
     update_wrapper(_wrapper, method)
     return _wrapper
@@ -73,11 +72,10 @@ def method_decorator(decorator, name=''):
                 "%s (%s)." % (name, obj, method)
             )
         _wrapper = _multi_decorate(decorator, method)
-        setattr(obj, name, _wrapper)
+        update_wrapper(_wrapper, method)
         return obj
 
-    # Don't worry about making _dec look similar to a list/tuple as it's rather
-    # meaningless.
+    # Don't worry about making _dec look similar to a list/tuple as it's rather    # meaningless.
     if not hasattr(decorator, '__iter__'):
         update_wrapper(_dec, decorator)
     # Change the name to aid debugging.
