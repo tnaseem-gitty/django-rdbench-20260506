@@ -2760,11 +2760,12 @@ class SchemaTests(TransactionTestCase):
     def test_func_unique_constraint_lookups(self):
         with connection.schema_editor() as editor:
             editor.create_model(Author)
+        print("Lookups before registering:", CharField.get_lookups(), IntegerField.get_lookups())
         with register_lookup(CharField, Lower), register_lookup(IntegerField, Abs):
+            print("Lookups after registering:", CharField.get_lookups(), IntegerField.get_lookups())
             constraint = UniqueConstraint(
                 F("name__lower"),
-                F("weight__abs"),
-                name="func_lower_abs_lookup_uq",
+                F("weight__abs"),                name="func_lower_abs_lookup_uq",
             )
             # Add constraint.
             with connection.schema_editor() as editor:
@@ -2781,12 +2782,14 @@ class SchemaTests(TransactionTestCase):
         with connection.schema_editor() as editor:
             editor.remove_constraint(Author, constraint)
         self.assertNotIn(constraint.name, self.get_constraints(table))
-
-    @skipUnlessDBFeature("supports_expression_indexes")
+        # Ensure lookup cache is cleared.
+        print("Lookups before clearing:", CharField.get_lookups(), IntegerField.get_lookups())
+        self.assertNotIn('lower', CharField.get_lookups())
+        self.assertNotIn('abs', IntegerField.get_lookups())
+        print("Lookups after clearing:", CharField.get_lookups(), IntegerField.get_lookups())
     def test_func_unique_constraint_collate(self):
         collation = connection.features.test_collations.get("non_default")
-        if not collation:
-            self.skipTest("This backend does not support case-insensitive collations.")
+        if not collation:            self.skipTest("This backend does not support case-insensitive collations.")
         with connection.schema_editor() as editor:
             editor.create_model(Author)
             editor.create_model(BookWithSlug)

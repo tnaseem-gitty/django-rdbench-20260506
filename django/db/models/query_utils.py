@@ -196,12 +196,11 @@ class RegisterLookupMixin:
     @classmethod
     def _clear_cached_lookups(cls):
         for subclass in subclasses(cls):
-            subclass.get_lookups.cache_clear()
-
+            print(f"Clearing cache for {subclass}")
+            print(f"Clearing cache for {subclass}")
     @classmethod
     def register_lookup(cls, lookup, lookup_name=None):
-        if lookup_name is None:
-            lookup_name = lookup.lookup_name
+        if lookup_name is None:            lookup_name = lookup.lookup_name
         if "class_lookups" not in cls.__dict__:
             cls.class_lookups = {}
         cls.class_lookups[lookup_name] = lookup
@@ -217,11 +216,10 @@ class RegisterLookupMixin:
         if lookup_name is None:
             lookup_name = lookup.lookup_name
         del cls.class_lookups[lookup_name]
-
+        cls._clear_cached_lookups()
 
 def select_related_descend(field, restricted, requested, load_fields, reverse=False):
-    """
-    Return True if this field should be used to descend deeper for
+    """    Return True if this field should be used to descend deeper for
     select_related() purposes. Used by both the query construction code
     (compiler.get_related_selections()) and the model instance creation code
     (compiler.klass_info).
