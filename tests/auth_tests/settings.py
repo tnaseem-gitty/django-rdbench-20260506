@@ -1,9 +1,13 @@
 import os
-
+SECRET_KEY = 'temporary_secret_key'
+INSTALLED_APPS = [
+    'django.contrib.sites',
+    'django.contrib.contenttypes',
+    # other installed apps...
+]
 AUTH_MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-]
+    'django.contrib.auth.middleware.AuthenticationMiddleware',]
 
 AUTH_TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
