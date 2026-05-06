@@ -255,10 +255,12 @@ class Command(BaseCommand):
                         )
                 else:
                     self.log("No changes detected")
+                self.log("No changes detected")
+        elif check_changes:
+            sys.exit(1)
         else:
             if self.update:
-                self.write_to_last_migration_files(changes)
-            else:
+                self.write_to_last_migration_files(changes)            else:
                 self.write_migration_files(changes)
             if check_changes:
                 sys.exit(1)
