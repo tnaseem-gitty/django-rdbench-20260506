@@ -95,11 +95,52 @@ class UserCreationFormTest(TestDataMixin, TestCase):
             form["password2"].errors, [str(form.error_messages["password_mismatch"])]
         )
 
-    def test_both_passwords(self):
+    @mock.patch("django.contrib.auth.password_validation.password_changed")
+    def test_success(self, password_changed):
+        # The success case.
+        data = {
+            "username": "jsmith@example.com",
+            "password1": "test123",
+            "password2": "test123",
+        }
+        form = UserCreationForm(data)
+        self.assertTrue(form.is_valid())
+        form.save(commit=False)
+        self.assertEqual(password_changed.call_count, 0)
+        u = form.save()
+
+    def test_save_m2m_fields(self):
+        from django.contrib.auth import get_user_model
+        from django.db import models
+        from django import forms
+
+        class Group(models.Model):
+            name = models.CharField(max_length=255)
+
+        class CustomUser(get_user_model()):
+            groups = models.ManyToManyField(Group)
+
+        class CustomUserCreationForm(UserCreationForm):
+            class Meta:
+                model = CustomUser
+                fields = ("username", "password1", "password2", "groups")
+
+        group1 = Group.objects.create(name="group1")
+        group2 = Group.objects.create(name="group2")
+
+        data = {
+            "username": "newuser",
+            "password1": "testpassword",
+            "password2": "testpassword",
+            "groups": [group1.id, group2.id],
+        }
+        form = CustomUserCreationForm(data)
+        self.assertTrue(form.is_valid())
+        user = form.save()
+        self.assertEqual(list(user.groups.all()), [group1, group2])
         # One (or both) passwords weren't given
         data = {"username": "jsmith"}
-        form = UserCreationForm(data)
-        required_error = [str(Field.default_error_messages["required"])]
+        form = UserCreationForm(data)        required_error = [str(Field.default_error_messages["required"])]
         self.assertFalse(form.is_valid())
         self.assertEqual(form["password1"].errors, required_error)
         self.assertEqual(form["password2"].errors, required_error)
