@@ -377,10 +377,12 @@ class MigrateTests(MigrationTestBase):
 
     @override_settings(MIGRATION_MODULES={'migrations': 'migrations.test_migrations_empty'})
     def test_showmigrations_no_migrations(self):
+        """
+        Tests that showmigrations behaves correctly for an app with no migrations.
+        """
         out = io.StringIO()
-        call_command('showmigrations', stdout=out, no_color=True)
+        call_command('showmigrations', 'migrations', stdout=out, no_color=True)
         self.assertEqual('migrations\n (no migrations)\n', out.getvalue().lower())
-
     @override_settings(INSTALLED_APPS=['migrations.migrations_test_apps.unmigrated_app'])
     def test_showmigrations_unmigrated_app(self):
         out = io.StringIO()
