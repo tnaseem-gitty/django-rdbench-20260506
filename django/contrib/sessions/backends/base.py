@@ -116,14 +116,13 @@ class SessionBase:
     def decode(self, session_data):
         try:
             return signing.loads(session_data, salt=self.key_salt, serializer=self.serializer)
-        # RemovedInDjango40Warning: when the deprecation ends, handle here
-        # exceptions similar to what _legacy_decode() does now.
         except Exception:
-            return self._legacy_decode(session_data)
+            if settings.DEFAULT_HASHING_ALGORITHM == 'sha1':
+                return self._legacy_decode(session_data)
+            raise
 
     def _legacy_decode(self, session_data):
-        # RemovedInDjango40Warning: pre-Django 3.1 format will be invalid.
-        encoded_data = base64.b64decode(session_data.encode('ascii'))
+        # RemovedInDjango40Warning: pre-Django 3.1 format will be invalid.        encoded_data = base64.b64decode(session_data.encode('ascii'))
         try:
             # could produce ValueError if there is no ':'
             hash, serialized = encoded_data.split(b':', 1)
