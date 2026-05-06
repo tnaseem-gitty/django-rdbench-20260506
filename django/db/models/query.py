@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core import exceptions
 from django.db import (
     DJANGO_VERSION_PICKLE_KEY, IntegrityError, NotSupportedError, connections,
-    router, transaction,
+    router, transaction, models,
 )
 from django.db.models import AutoField, DateField, DateTimeField, sql
 from django.db.models.constants import LOOKUP_SEP
@@ -689,8 +689,13 @@ class QuerySet:
         """
         assert not self.query.is_sliced, \
             "Cannot use 'limit' or 'offset' with in_bulk"
-        if field_name != 'pk' and not self.model._meta.get_field(field_name).unique:
-            raise ValueError("in_bulk()'s field_name must be a unique field but %r isn't." % field_name)
+        if field_name != 'pk':
+            field = self.model._meta.get_field(field_name)
+            if not (field.unique or any(
+                isinstance(constraint, models.UniqueConstraint) and constraint.fields == (field_name,)
+                for constraint in self.model._meta.constraints
+            )):
+                raise ValueError("in_bulk()'s field_name must be a unique field but %r isn't." % field_name)
         if id_list is not None:
             if not id_list:
                 return {}
