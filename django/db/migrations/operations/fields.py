@@ -232,10 +232,43 @@ class AlterField(FieldOperation):
             to_field = to_model._meta.get_field(self.name)
             if not self.preserve_default:
                 to_field.default = self.field.default
+            # Check if the only change is to the choices
+            from_field_attrs = from_field.deconstruct()[1:]
+            to_field_attrs = to_field.deconstruct()[1:]
+            from_field_attrs_dict = dict(zip(from_field_attrs[0], from_field_attrs[1]))
+            to_field_attrs_dict = dict(zip(to_field_attrs[0], to_field_attrs[1]))
+            from_field_attrs_dict.pop('choices', None)
+            to_field_attrs_dict.pop('choices', None)
+            if (
+                schema_editor.connection.vendor == 'sqlite'
+                and from_field_attrs_dict == to_field_attrs_dict
+            ):
+                return
+            from_field_attrs_dict.pop('choices', None)
+            to_field_attrs_dict.pop('choices', None)
+            if (
+                schema_editor.connection.vendor == 'sqlite'
+                and from_field_attrs_dict == to_field_attrs_dict
+            ):
+                return
+            from_field_attrs_dict.pop('choices', None)
+            to_field_attrs_dict.pop('choices', None)
+            if (
+                schema_editor.connection.vendor == 'sqlite'
+                and from_field_attrs_dict == to_field_attrs_dict
+            ):
+                return
+            from_field_attrs_dict.pop('choices', None)
+            to_field_attrs_dict.pop('choices', None)
+            if (
+                schema_editor.connection.vendor == 'sqlite'
+                and from_field_attrs_dict == to_field_attrs_dict
+            ):
+                return
+                return
             schema_editor.alter_field(from_model, from_field, to_field)
             if not self.preserve_default:
                 to_field.default = NOT_PROVIDED
-
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
         self.database_forwards(app_label, schema_editor, from_state, to_state)
 
