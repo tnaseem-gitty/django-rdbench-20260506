@@ -1722,9 +1722,11 @@ class Model(metaclass=ModelBase):
                             )
                         )
 
-        # Skip ordering on pk. This is always a valid order_by field
+        # Skip ordering on pk and related field pks. This is always a valid order_by field
         # but is an alias and therefore won't be found by opts.get_field.
         fields = {f for f in fields if f != 'pk'}
+        related_fields = {f for f in related_fields if f != 'pk' and not f.endswith('__pk')}
+        related_fields = {f for f in related_fields if not f.endswith('__pk')}
 
         # Check for invalid or nonexistent fields in ordering.
         invalid_fields = []
