@@ -1,0 +1,9 @@
+SECRET_KEY = 'fake-key'
+SECURE_REFERRER_POLICY = "same-origin"
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+ROOT_URLCONF = 'tests.project_template.urls'
