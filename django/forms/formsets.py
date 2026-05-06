@@ -66,11 +66,11 @@ class BaseFormSet(RenderableFormMixin):
 
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
                  initial=None, error_class=ErrorList, form_kwargs=None,
-                 error_messages=None):
+                 error_messages=None, allow_new=True):
+        self.allow_new = allow_new
         self.is_bound = data is not None or files is not None
         self.prefix = prefix or self.get_default_prefix()
-        self.auto_id = auto_id
-        self.data = data or {}
+        self.auto_id = auto_id        self.data = data or {}
         self.files = files or {}
         self.initial = initial
         self.form_kwargs = form_kwargs or {}
@@ -166,20 +166,19 @@ class BaseFormSet(RenderableFormMixin):
             # Use the length of the initial data if it's there, 0 otherwise.
             initial_forms = len(self.initial) if self.initial else 0
         return initial_forms
-
     @cached_property
     def forms(self):
         """Instantiate forms at first property access."""
-        # DoS protection is included in total_form_count()
+        total_forms = self.total_form_count()
+        if not self.allow_new:
+            total_forms = self.initial_form_count()
         return [
             self._construct_form(i, **self.get_form_kwargs(i))
-            for i in range(self.total_form_count())
+            for i in range(total_forms)
         ]
-
     def get_form_kwargs(self, index):
         """
         Return additional keyword arguments for each individual formset form.
-
         index will be None if the form being constructed is a new empty
         form.
         """
@@ -187,10 +186,11 @@ class BaseFormSet(RenderableFormMixin):
 
     def _construct_form(self, i, **kwargs):
         """Instantiate and return the i-th form instance in a formset."""
+        if not self.allow_new and i >= self.initial_form_count():
+            raise IndexError("New form creation is not allowed.")
         defaults = {
             'auto_id': self.auto_id,
-            'prefix': self.add_prefix(i),
-            'error_class': self.error_class,
+            'prefix': self.add_prefix(i),            'error_class': self.error_class,
             # Don't render the HTML 'required' attribute as it may cause
             # incorrect validation for extra, optional, and deleted
             # forms in the formset.
