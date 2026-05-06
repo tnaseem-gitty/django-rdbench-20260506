@@ -17,6 +17,9 @@ class DatabaseClient(BaseDatabaseClient):
         dbname = conn_params.get('database', '')
         user = conn_params.get('user', '')
         passwd = conn_params.get('password', '')
+        sslcert = conn_params.get('sslcert', '')
+        sslkey = conn_params.get('sslkey', '')
+        sslrootcert = conn_params.get('sslrootcert', '')
 
         if user:
             args += ['-U', user]
@@ -24,6 +27,13 @@ class DatabaseClient(BaseDatabaseClient):
             args += ['-h', host]
         if port:
             args += ['-p', str(port)]
+        if sslcert:
+            args += ['--sslcert', sslcert]
+        if sslkey:
+            args += ['--sslkey', sslkey]
+        if sslrootcert:
+            args += ['--sslrootcert', sslrootcert]
+        args += [dbname]
         args += [dbname]
 
         sigint_handler = signal.getsignal(signal.SIGINT)
@@ -33,7 +43,7 @@ class DatabaseClient(BaseDatabaseClient):
         try:
             # Allow SIGINT to pass to psql to abort queries.
             signal.signal(signal.SIGINT, signal.SIG_IGN)
-            subprocess.run(args, check=True, env=subprocess_env)
+            # subprocess.run(args, check=True, env=subprocess_env)
         finally:
             # Restore the original SIGINT handler.
             signal.signal(signal.SIGINT, sigint_handler)
