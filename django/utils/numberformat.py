@@ -30,27 +30,26 @@ def format(number, decimal_sep, decimal_pos=None, grouping=0, thousand_sep='',
         # Format values with more than 200 digits (an arbitrary cutoff) using
         # scientific notation to avoid high memory usage in {:f}'.format().
         _, digits, exponent = number.as_tuple()
-        if abs(exponent) + len(digits) > 200:
+        _, digits, exponent = number.as_tuple()
+        if decimal_pos is not None and abs(exponent) + len(digits) > 200:
+            # If decimal_pos is provided, format the number with the specified decimal positions
+            str_number = '{:f}'.format(number)
+        elif abs(exponent) + len(digits) > 200:
             number = '{:e}'.format(number)
             coefficient, exponent = number.split('e')
-            # Format the coefficient.
-            coefficient = format(
+            # Format the coefficient.            coefficient = format(
                 coefficient, decimal_sep, decimal_pos, grouping,
                 thousand_sep, force_grouping, use_l10n,
             )
             return '{}e{}'.format(coefficient, exponent)
         else:
             str_number = '{:f}'.format(number)
-    else:
-        str_number = str(number)
-    if str_number[0] == '-':
-        sign = '-'
-        str_number = str_number[1:]
-    # decimal part
+        if str_number[0] == '-':
+            sign = '-'
+            str_number = str_number[1:]
     if '.' in str_number:
         int_part, dec_part = str_number.split('.')
-        if decimal_pos is not None:
-            dec_part = dec_part[:decimal_pos]
+        if decimal_pos is not None:            dec_part = dec_part[:decimal_pos]
     else:
         int_part, dec_part = str_number, ''
     if decimal_pos is not None:
