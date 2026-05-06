@@ -981,7 +981,8 @@ class QuerySet:
     def update(self, **kwargs):
         """
         Update all elements in the current QuerySet, setting all the given
-        fields to the appropriate values.
+        fields to the appropriate values. This method will update all
+        parent tables for multi-table inheritance.
         """
         self._not_support_combined_queries("update")
         if self.query.is_sliced:
@@ -991,11 +992,19 @@ class QuerySet:
         query.add_update_values(kwargs)
         # Clear any annotations so that they won't be present in subqueries.
         query.annotations = {}
-        with transaction.mark_for_rollback_on_error(using=self.db):
+        with transaction.atomic(using=self.db):
             rows = query.get_compiler(self.db).execute_sql(CURSOR)
+            if self.model._meta.parents:
+                for parent_model in self.model._meta.get_parent_list():
+                    parent_query = parent_model._base_manager.filter(
+                        pk__in=self.values('pk')
+                    ).query
+                    parent_query = parent_query.chain(sql.UpdateQuery)
+                    parent_query.add_update_values(kwargs)
+                    parent_query.get_compiler(self.db).execute_sql(CURSOR)
         self._result_cache = None
         return rows
-
+    update.alters_data = True
     update.alters_data = True
 
     def _update(self, values):

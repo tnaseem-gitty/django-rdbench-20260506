@@ -83,22 +83,29 @@ class UpdateQuery(Query):
         query. This is the entry point for the public update() method on
         querysets.
         """
+        print("Debug: Entering add_update_values")
+        print(f"Debug: Values to update: {values}")
         values_seq = []
         for name, val in values.items():
+            print(f"Debug: Processing field: {name}")
             field = self.get_meta().get_field(name)
             direct = (
                 not (field.auto_created and not field.concrete) or not field.concrete
             )
             model = field.model._meta.concrete_model
+            print(f"Debug: Field model: {model}")
+            print(f"Debug: Query model: {self.get_meta().concrete_model}")
             if not direct or (field.is_relation and field.many_to_many):
                 raise FieldError(
                     "Cannot update model field %r (only non-relations and "
                     "foreign keys permitted)." % field
                 )
             if model is not self.get_meta().concrete_model:
+                print(f"Debug: Adding related update for {model}")
                 self.add_related_update(model, field, val)
-                continue
-            values_seq.append((field, model, val))
+            else:
+                print(f"Debug: Adding direct update for field: {field}")
+                values_seq.append((field, model, val))
         return self.add_update_fields(values_seq)
 
     def add_update_fields(self, values_seq):
@@ -117,10 +124,17 @@ class UpdateQuery(Query):
         """
         Add (name, value) to an update query for an ancestor model.
 
-        Update are coalesced so that only one update query per ancestor is run.
+        Updates are coalesced so that only one update query per ancestor is run.
+        For multi-table inheritance, ensure updates are applied to all parent models.
         """
-        self.related_updates.setdefault(model, []).append((field, None, value))
-
+        print(f"Debug: add_related_update called for model: {model}, field: {field}")
+        concrete_model = self.get_meta().concrete_model
+        for parent_model in concrete_model._meta.get_parent_list():
+            if issubclass(parent_model, model):
+                print(f"Debug: Adding update for parent model: {parent_model}")
+                self.related_updates.setdefault(parent_model, []).append((field, None, value))
+        for parent_model in model._meta.parents:
+            self.related_updates.setdefault(parent_model, []).append((field, None, value))
     def get_related_updates(self):
         """
         Return a list of query objects: one for each update required to an
