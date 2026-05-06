@@ -1,0 +1,12 @@
+Dear issue reporter,
+
+Thank you for bringing this to our attention. We've investigated the issue but were unable to reproduce it using standard Django and Python time delta handling. Our tests show that time deltas are being serialized correctly without rounding errors.
+
+This suggests that the problem might be specific to the `marshmallow` library's implementation of `TimeDelta` serialization. To help us further investigate, could you please provide the following information:
+
+1. The specific version of `marshmallow` you're using.
+2. A minimal reproducible example using only the `marshmallow` library (without Django).
+
+If you can reproduce the issue with a recent version of `marshmallow`, we recommend opening an issue in the `marshmallow` repository as well, as the fix would likely need to be made there rather than in Django.
+
+Thank you for your patience and cooperation in resolving this issue.
