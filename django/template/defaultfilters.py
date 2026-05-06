@@ -496,6 +496,15 @@ def safeseq(value):
     with the results.
     """
     return [mark_safe(obj) for obj in value]
+@register.filter(is_safe=True)
+def escapeseq(value):
+    """
+    Escape each item in a sequence of strings.
+    Useful for escaping a list of strings before using the 'join' filter.
+    """
+    return [conditional_escape(v) for v in value]
+
+
 
 
 @register.filter(is_safe=True)
