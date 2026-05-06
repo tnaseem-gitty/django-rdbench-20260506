@@ -217,10 +217,10 @@ class HttpResponseBase:
         self.set_cookie(
             key, max_age=0, path=path, domain=domain, secure=secure,
             expires='Thu, 01 Jan 1970 00:00:00 GMT',
+            samesite=settings.SESSION_COOKIE_SAMESITE,
         )
 
     # Common methods used by subclasses
-
     def make_bytes(self, value):
         """Turn a value into a bytestring encoded in the output charset."""
         # Per PEP 3333, this response body must be bytes. To avoid returning
