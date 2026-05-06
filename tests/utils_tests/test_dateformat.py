@@ -194,3 +194,18 @@ class DateFormatTests(SimpleTestCase):
                     dateformat.format(datetime(2000, 1, 1, hour), 'g'),
                     expected,
                 )
+
+    def test_year_less_than_1000(self):
+        """
+        Test that the 'Y' format specifier returns a four-digit year
+        for years less than 1000.
+        """
+        print("Running test_year_less_than_1000")  # Add this line
+        d = date(1, 1, 1)
+        self.assertEqual(dateformat.format(d, 'Y'), '0001')
+        d = date(999, 1, 1)
+        self.assertEqual(dateformat.format(d, 'Y'), '0999')
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()
