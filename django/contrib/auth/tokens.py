@@ -94,7 +94,8 @@ class PasswordResetTokenGenerator:
         # Truncate microseconds so that tokens are consistent even if the
         # database doesn't support microseconds.
         login_timestamp = '' if user.last_login is None else user.last_login.replace(microsecond=0, tzinfo=None)
-        return str(user.pk) + user.password + str(login_timestamp) + str(timestamp)
+        email = user.email if hasattr(user, 'email') else ''
+        return str(user.pk) + user.password + str(login_timestamp) + str(timestamp) + email
 
     def _num_seconds(self, dt):
         return int((dt - datetime(2001, 1, 1)).total_seconds())

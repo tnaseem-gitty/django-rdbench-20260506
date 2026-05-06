@@ -51,3 +51,6 @@ Bugfixes
   ``'self'`` in the ``of`` argument with :ref:`multi-table inheritance
   <multi-table-inheritance>`, a parent model was locked instead of the
   queryset's model (:ticket:`30953`).
+* Fixed a bug in :class:`~django.contrib.auth.tokens.PasswordResetTokenGenerator`
+  where the token would not be invalidated when the user's email address was
+  changed.
