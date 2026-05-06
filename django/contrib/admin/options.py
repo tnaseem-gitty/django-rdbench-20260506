@@ -582,7 +582,7 @@ class ModelAdmin(BaseModelAdmin):
 
     def get_inline_instances(self, request, obj=None):
         inline_instances = []
-        for inline_class in self.inlines:
+        for inline_class in self.get_inlines(request, obj):
             inline = inline_class(self.model, self.admin_site)
             if request:
                 if not (inline.has_view_or_change_permission(request, obj) or
@@ -594,6 +594,16 @@ class ModelAdmin(BaseModelAdmin):
             inline_instances.append(inline)
 
         return inline_instances
+
+    def get_inlines(self, request, obj=None):
+        """
+        Hook for specifying inline classes. By default, returns `self.inlines`.
+        
+        This method can be overridden to dynamically change the inlines
+        based on the request or model instance.
+        """
+        return self.inlines
+
 
     def get_urls(self):
         from django.urls import path
