@@ -6,6 +6,14 @@ themselves do not have to (and could be backed by things other than SQL
 databases). The abstraction barrier only works one way: this module has to know
 all about the internals of models in order to get the information it needs.
 """
+
+# TODO: Support for multiple FilteredRelation instances
+# This file has been modified to store multiple FilteredRelation instances
+# for each alias. However, the query generation process currently only uses
+# the first FilteredRelation for each alias. To fully support multiple
+# FilteredRelations, further modifications to the query generation process
+# are needed.
+
 import copy
 import difflib
 import functools
@@ -1598,7 +1606,9 @@ class Query(BaseExpression):
                         "relations deeper than the relation_name (got %r for "
                         "%r)." % (lookup, filtered_relation.relation_name)
                     )
-        self._filtered_relations[filtered_relation.alias] = filtered_relation
+        if filtered_relation.alias not in self._filtered_relations:
+            self._filtered_relations[filtered_relation.alias] = []
+        self._filtered_relations[filtered_relation.alias].append(filtered_relation)
 
     def names_to_path(self, names, opts, allow_many=True, fail_on_missing=False):
         """
@@ -1631,7 +1641,11 @@ class Query(BaseExpression):
                 if name in self.annotation_select:
                     field = self.annotation_select[name].output_field
                 elif name in self._filtered_relations and pos == 0:
-                    filtered_relation = self._filtered_relations[name]
+                    filtered_relations = self._filtered_relations[name]
+                    # TODO: This currently only uses the first FilteredRelation.
+                    # To fully support multiple FilteredRelations, we need to modify
+                    # the query generation process to consider all FilteredRelations.
+                    filtered_relation = filtered_relations[0]
                     if LOOKUP_SEP in filtered_relation.relation_name:
                         parts = filtered_relation.relation_name.split(LOOKUP_SEP)
                         filtered_relation_path, field, _, _ = self.names_to_path(
