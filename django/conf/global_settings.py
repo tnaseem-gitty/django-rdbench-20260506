@@ -14,8 +14,7 @@ def gettext_noop(s):
 # CORE             #
 ####################
 
-DEBUG = False
-
+FILE_UPLOAD_PERMISSIONS = 0o644
 # Whether the framework should propagate raw exceptions rather than catching
 # them. This is useful under some testing situations and should never be used
 # on a live site.
