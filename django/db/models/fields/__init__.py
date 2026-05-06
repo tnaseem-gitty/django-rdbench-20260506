@@ -1,63 +1,71 @@
-import collections.abc
-import copy
-import datetime
-import decimal
-import operator
-import uuid
-import warnings
-from base64 import b64decode, b64encode
-from functools import partialmethod, total_ordering
-
-from django import forms
-from django.apps import apps
+import os
+import django
 from django.conf import settings
-from django.core import checks, exceptions, validators
-from django.db import connection, connections, router
-from django.db.models.constants import LOOKUP_SEP
-from django.db.models.query_utils import DeferredAttribute, RegisterLookupMixin
-from django.utils import timezone
-from django.utils.datastructures import DictWrapper
-from django.utils.dateparse import (
-    parse_date, parse_datetime, parse_duration, parse_time,
-)
-from django.utils.duration import duration_microseconds, duration_string
-from django.utils.functional import Promise, cached_property
-from django.utils.ipv6 import clean_ipv6_address
-from django.utils.itercompat import is_iterable
-from django.utils.text import capfirst
-from django.utils.translation import gettext_lazy as _
 
-__all__ = [
-    'AutoField', 'BLANK_CHOICE_DASH', 'BigAutoField', 'BigIntegerField',
-    'BinaryField', 'BooleanField', 'CharField', 'CommaSeparatedIntegerField',
-    'DateField', 'DateTimeField', 'DecimalField', 'DurationField',
-    'EmailField', 'Empty', 'Field', 'FilePathField', 'FloatField',
-    'GenericIPAddressField', 'IPAddressField', 'IntegerField', 'NOT_PROVIDED',
-    'NullBooleanField', 'PositiveBigIntegerField', 'PositiveIntegerField',
-    'PositiveSmallIntegerField', 'SlugField', 'SmallAutoField',
-    'SmallIntegerField', 'TextField', 'TimeField', 'URLField', 'UUIDField',
-]
+# Configure Django settings
+if not settings.configured:
+    settings.configure(
+        INSTALLED_APPS=[
+            'django.contrib.contenttypes',
+        ],
+        DATABASES={
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': ':memory:',
+            }
+        }
+    )
+    django.setup()
 
+from django.db import models
+from django.db.models.fields import Field
 
-class Empty:
+class CustomField(Field):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = None
+
+    def contribute_to_class(self, cls, name, **kwargs):
+        super().contribute_to_class(cls, name, **kwargs)
+        self.model = cls
+
+    def __eq__(self, other):
+        if isinstance(other, CustomField):
+            return (
+                self.creation_counter == other.creation_counter and
+                self.model == other.model
+            )
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self.creation_counter, self.model))
+
+    def __lt__(self, other):
+        if isinstance(other, CustomField):
+            return (self.creation_counter, self.model) < (other.creation_counter, other.model)
+        return NotImplemented
+
+class A(models.Model):
+    class Meta:
+        abstract = True
+    myfield = CustomField()
+
+class B(A):
     pass
 
-
-class NOT_PROVIDED:
+class C(A):
     pass
 
+b_field = B._meta.get_field('myfield')
+c_field = C._meta.get_field('myfield')
 
-# The values to use for "blank" in SelectFields. Will be appended to the start
-# of most "choices" lists.
-BLANK_CHOICE_DASH = [("", "---------")]
+print(f"B.myfield == C.myfield: {b_field == c_field}")
+print(f"hash(B.myfield) == hash(C.myfield): {hash(b_field) == hash(c_field)}")
+print(f"B.myfield < C.myfield: {b_field < c_field}")
+print(f"C.myfield < B.myfield: {c_field < b_field}")
+print(f"Length of set: {len({b_field, c_field})}")
 
-
-def _load_field(app_label, model_name, field_name):
-    return apps.get_model(app_label, model_name)._meta.get_field(field_name)
-
-
-# A guide to Field parameters:
-#
+print("Script completed successfully, no errors.")
 #   * name:      The name of the field specified in the model.
 #   * attname:   The attribute to use on the model object. This is the same as
 #                "name", except in the case of ForeignKeys, where "_id" is
