@@ -791,10 +791,22 @@ class OtherModelTests(SimpleTestCase):
                 id='models.E015',
             )
         ])
+    @isolate_apps('tests')
+    def test_ordering_pointing_to_related_field_pk(self):
+        class Parent(models.Model):
+            class Meta:
+                app_label = 'tests'
+
+        class Child(models.Model):
+            parent = models.ForeignKey(Parent, models.CASCADE)
+
+            class Meta:
+                ordering = ('parent__pk',)
+
+        self.assertEqual(Child.check(), [])
 
     def test_ordering_pointing_to_two_related_model_field(self):
-        class Parent2(models.Model):
-            pass
+        class Parent2(models.Model):            pass
 
         class Parent1(models.Model):
             parent2 = models.ForeignKey(Parent2, models.CASCADE)
