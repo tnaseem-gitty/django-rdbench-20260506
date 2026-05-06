@@ -336,5 +336,32 @@ class EscapeLeadingSlashesTests(unittest.TestCase):
             ('//', '/%2F'),
         )
         for url, expected in tests:
-            with self.subTest(url=url):
                 self.assertEqual(escape_leading_slashes(url), expected)
+
+
+class ParseHttpDateTests(SimpleTestCase):
+    def test_parse_http_date(self):
+        from django.utils.http import parse_http_date
+        import time
+
+        # Test for dates before 1970 (negative timestamps)
+        self.assertEqual(parse_http_date("Sun, 06 Nov 1994 08:49:37 GMT"), 784111777)
+
+        # Test for dates after 1970
+        self.assertEqual(parse_http_date("Wed, 21 Oct 2015 07:28:00 GMT"), 1445412480)
+
+        # Test for dates with two-digit years
+        current_year = time.gmtime().tm_year
+        current_century = current_year - (current_year % 100)
+
+        # Date that appears to be more than 50 years in the future
+        future_date = f"Wed, 21 Oct {(current_year % 100) + 51:02d} 07:28:00 GMT"
+        expected_year = current_century - 100 + (current_year % 100) + 51
+        expected_timestamp = int(time.mktime(time.strptime(f"{expected_year}-10-21 07:28:00", "%Y-%m-%d %H:%M:%S")))
+        self.assertEqual(parse_http_date(future_date), expected_timestamp)
+
+        # Date that appears to be less than or equal to 50 years in the future
+        recent_date = f"Wed, 21 Oct {(current_year % 100) + 50:02d} 07:28:00 GMT"
+        expected_year = current_century + (current_year % 100) + 50
+        expected_timestamp = int(time.mktime(time.strptime(f"{expected_year}-10-21 07:28:00", "%Y-%m-%d %H:%M:%S")))
+        self.assertEqual(parse_http_date(recent_date), expected_timestamp)
