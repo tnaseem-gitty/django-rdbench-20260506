@@ -37,6 +37,9 @@ class CheckConstraint(BaseConstraint):
         where = query.build_where(self.check)
         compiler = query.get_compiler(connection=schema_editor.connection)
         sql, params = where.as_sql(compiler, schema_editor.connection)
+        # Remove only the table name qualifier to avoid issues with table renaming
+        table_name = model._meta.db_table
+        sql = sql.replace(f'"{table_name}".', '')
         return sql % tuple(schema_editor.quote_value(p) for p in params)
 
     def constraint_sql(self, model, schema_editor):

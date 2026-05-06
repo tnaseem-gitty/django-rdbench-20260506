@@ -79,6 +79,32 @@ class CheckConstraintTests(TestCase):
         expected_name = 'price_gt_discounted_price'
         self.assertIn(expected_name, constraints)
 
+    @skipUnlessDBFeature('supports_table_check_constraints')
+    def test_check_constraint_with_or(self):
+        class TestModel(models.Model):
+            field_1 = models.IntegerField(null=True)
+            flag = models.BooleanField()
+
+            class Meta:
+                constraints = [
+                    models.CheckConstraint(
+                        check=models.Q(flag=True, field_1__isnull=False) | models.Q(flag=False),
+                        name='field_1_has_value_if_flag_set'
+                    ),
+                ]
+
+        # This should not raise any exception
+        TestModel.objects.create(field_1=1, flag=True)
+        TestModel.objects.create(field_1=None, flag=False)
+
+        # This should raise an IntegrityError
+        with self.assertRaises(IntegrityError):
+            TestModel.objects.create(field_1=None, flag=True)
+
+        # Check if the constraint is properly created in the database
+        constraints = get_constraints(TestModel._meta.db_table)
+        self.assertIn('field_1_has_value_if_flag_set', constraints)
+
 
 class UniqueConstraintTests(TestCase):
     @classmethod
