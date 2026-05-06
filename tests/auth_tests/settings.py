@@ -1,3 +1,4 @@
+SECRET_KEY = 'dummy_secret_key'
 import os
 
 AUTH_MIDDLEWARE = [
@@ -16,3 +17,4 @@ AUTH_TEMPLATES = [{
         ],
     },
 }]
+
