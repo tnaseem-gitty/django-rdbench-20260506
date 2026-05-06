@@ -10,10 +10,10 @@ class Author(models.Model):
     goes_by = models.CharField(max_length=50, null=True, blank=True)
     age = models.PositiveSmallIntegerField(default=30)
 
-
-class Article(models.Model):
-    authors = models.ManyToManyField(Author, related_name='articles')
-    title = models.CharField(max_length=50)
+    def setUp(self):
+        self.utc_datetime = datetime(2022, 1, 1, 12, 30, 45, tzinfo=timezone.utc)
+        self.ny_tz = ZoneInfo("America/New_York")
+        DTModel.objects.create(start_datetime=self.utc_datetime)
     summary = models.CharField(max_length=200, null=True, blank=True)
     text = models.TextField()
     written = models.DateTimeField()
