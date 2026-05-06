@@ -277,30 +277,30 @@ class Command(BaseCommand):
                     self.start = time.monotonic()
                 self.stdout.write("  Applying %s..." % migration, ending="")
                 self.stdout.flush()
+                sys.stdout.flush()
             elif action == "apply_success":
                 elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""
-                if fake:
-                    self.stdout.write(self.style.SUCCESS(" FAKED" + elapsed))
+                if fake:                    self.stdout.write(self.style.SUCCESS(" FAKED" + elapsed))
                 else:
                     self.stdout.write(self.style.SUCCESS(" OK" + elapsed))
             elif action == "unapply_start":
                 if compute_time:
                     self.start = time.monotonic()
-                self.stdout.write("  Unapplying %s..." % migration, ending="")
+                self.stdout.flush()
+                sys.stdout.flush()
                 self.stdout.flush()
             elif action == "unapply_success":
-                elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""
-                if fake:
+                elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""                if fake:
                     self.stdout.write(self.style.SUCCESS(" FAKED" + elapsed))
                 else:
                     self.stdout.write(self.style.SUCCESS(" OK" + elapsed))
             elif action == "render_start":
                 if compute_time:
-                    self.start = time.monotonic()
+                    self.stdout.flush()
+                    sys.stdout.flush()
                 self.stdout.write("  Rendering model states...", ending="")
                 self.stdout.flush()
-            elif action == "render_success":
-                elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""
+            elif action == "render_success":                elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""
                 self.stdout.write(self.style.SUCCESS(" DONE" + elapsed))
 
     def sync_apps(self, connection, app_labels):
