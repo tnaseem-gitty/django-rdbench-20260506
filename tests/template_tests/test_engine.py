@@ -21,7 +21,16 @@ class RenderToStringTest(SimpleTestCase):
             'obj:test\n',
         )
 
+    def test_autoescape(self):
+        engine = Engine(dirs=[TEMPLATE_DIR], autoescape=False)
+        template = engine.from_string('{{ value }}')
+        result = engine.render_to_string(template, {'value': '<b>bold</b>'})
+        self.assertEqual(result, '<b>bold</b>')
 
+        engine_autoescape = Engine(dirs=[TEMPLATE_DIR], autoescape=True)
+        template_autoescape = engine_autoescape.from_string('{{ value }}')
+        result_autoescape = engine_autoescape.render_to_string(template_autoescape, {'value': '<b>bold</b>'})
+        self.assertEqual(result_autoescape, '&lt;b&gt;bold&lt;/b&gt;')
 class GetDefaultTests(SimpleTestCase):
 
     @override_settings(TEMPLATES=[])
