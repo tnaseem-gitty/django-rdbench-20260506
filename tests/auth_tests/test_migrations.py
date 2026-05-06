@@ -1,10 +1,11 @@
 from importlib import import_module
 
+import django
 from django.apps import apps
+django.setup()
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
-from django.test.utils import captured_stdout
+from django.test import TestCasefrom django.test.utils import captured_stdout
 
 from .models import Proxy, UserProxy
 
