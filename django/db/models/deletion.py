@@ -326,15 +326,19 @@ class Collector:
                 instances.reverse()
 
             # delete instances
+            # delete instances
             for model, instances in self.data.items():
                 query = sql.DeleteQuery(model)
                 pk_list = [obj.pk for obj in instances]
+                # Combine deletion queries using OR condition
+                combined_query = {model._meta.pk.attname + '__in': pk_list}
                 count = query.delete_batch(pk_list, self.using)
+                deleted_counter[model._meta.label] += count
+                combined_query = {model._meta.pk.attname + '__in': pk_list}
                 deleted_counter[model._meta.label] += count
 
                 if not model._meta.auto_created:
-                    for obj in instances:
-                        signals.post_delete.send(
+                    for obj in instances:                        signals.post_delete.send(
                             sender=model, instance=obj, using=self.using
                         )
 
