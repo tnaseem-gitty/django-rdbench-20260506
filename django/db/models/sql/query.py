@@ -1634,7 +1634,10 @@ class Query(BaseExpression):
         """
         joins = joins[:]
         for pos, info in enumerate(reversed(path)):
-            if len(joins) == 1 or not info.direct:
+            if len(joins) == 1:
+                break
+            if not info.direct:
+                # Don't trim reverse joins
                 break
             if info.filtered_relation:
                 break
@@ -1642,9 +1645,20 @@ class Query(BaseExpression):
             cur_targets = {t.column for t in targets}
             if not cur_targets.issubset(join_targets):
                 break
-            targets_dict = {r[1].column: r[0] for r in info.join_field.related_fields if r[1].column in cur_targets}
-            targets = tuple(targets_dict[t.column] for t in targets)
-            self.unref_alias(joins.pop())
+            # Check if this is a self-referential foreign key
+            if info.from_opts == info.to_opts:
+                # For self-referential foreign keys, we can trim the join if the current targets
+                # are a subset of the join targets and the join is not filtered
+                if cur_targets.issubset(join_targets) and not info.filtered_relation:
+                    targets_dict = {r[1].column: r[0] for r in info.join_field.related_fields if r[1].column in cur_targets}
+                    targets = tuple(targets_dict[t.column] for t in targets)
+                    self.unref_alias(joins.pop())
+                else:
+                    break
+            else:
+                targets_dict = {r[1].column: r[0] for r in info.join_field.related_fields if r[1].column in cur_targets}
+                targets = tuple(targets_dict[t.column] for t in targets)
+                self.unref_alias(joins.pop())
         return targets, joins[-1], joins
 
     @classmethod
