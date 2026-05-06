@@ -548,6 +548,16 @@ _connector_combinations = [
             Combinable.BITXOR,
         )
     },
+    # MOD operator
+    {
+        Combinable.MOD: [
+            (fields.IntegerField, fields.IntegerField, fields.IntegerField),
+            (fields.DecimalField, fields.IntegerField, fields.DecimalField),
+            (fields.IntegerField, fields.DecimalField, fields.DecimalField),
+            (fields.DecimalField, fields.DecimalField, fields.DecimalField),
+        ]
+    },
+    # Numeric with NULL.
     # Numeric with NULL.
     {
         connector: [

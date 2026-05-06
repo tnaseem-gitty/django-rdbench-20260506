@@ -1,7 +1,7 @@
 import math
 
 from django.db.models.expressions import Func, Value
-from django.db.models.fields import FloatField, IntegerField
+from django.db.models.fields import FloatField, IntegerField, DecimalField
 from django.db.models.functions import Cast
 from django.db.models.functions.mixins import (
     FixDecimalInputMixin,
@@ -125,7 +125,13 @@ class Mod(FixDecimalInputMixin, NumericOutputFieldMixin, Func):
     function = "MOD"
     arity = 2
 
-
+    def _resolve_output_field(self):
+        source_fields = self.get_source_expressions()
+        if any(isinstance(getattr(s, 'value', None), DecimalField) for s in source_fields):
+            return DecimalField()
+        elif all(isinstance(getattr(s, 'value', None), IntegerField) for s in source_fields):
+            return IntegerField()
+        return super()._resolve_output_field()
 class Pi(NumericOutputFieldMixin, Func):
     function = "PI"
     arity = 0

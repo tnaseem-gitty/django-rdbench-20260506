@@ -42,3 +42,14 @@ class ModTests(TestCase):
         self.assertEqual(obj.small_mod, math.fmod(obj.small, obj.normal))
         self.assertEqual(obj.normal_mod, math.fmod(obj.normal, obj.big))
         self.assertEqual(obj.big_mod, math.fmod(obj.big, obj.small))
+
+    def test_decimal_and_integer(self):
+        DecimalModel.objects.create(n1=Decimal("10.5"), n2=Decimal("2"))
+        obj = DecimalModel.objects.annotate(
+            mod_with_int=Mod("n1", 3),
+            mod_with_decimal=Mod("n1", "n2"),
+        ).first()
+        self.assertIsInstance(obj.mod_with_int, Decimal)
+        self.assertIsInstance(obj.mod_with_decimal, Decimal)
+        self.assertAlmostEqual(obj.mod_with_int, Decimal("1.5"))
+        self.assertAlmostEqual(obj.mod_with_decimal, Decimal("0.5"))
