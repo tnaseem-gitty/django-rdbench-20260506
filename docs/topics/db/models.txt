@@ -98,11 +98,27 @@ Example::
         last_name = models.CharField(max_length=50)
         instrument = models.CharField(max_length=100)
 
-    class Album(models.Model):
-        artist = models.ForeignKey(Musician, on_delete=models.CASCADE)
-        name = models.CharField(max_length=100)
-        release_date = models.DateField()
-        num_stars = models.IntegerField()
+Custom save() method
+--------------------
+
+In some cases, you might want to customize the behavior of the ``save()`` method,
+for example, to handle saving objects with existing primary keys. Here's an
+example of how to modify the ``save()`` method to update existing objects
+instead of raising an ``IntegrityError``:
+
+.. literalinclude:: custom_model_example.py
+   :language: python
+   :lines: 9-24
+
+This custom ``save()`` method will update the existing object if one with the
+same primary key exists, or create a new object if it doesn't. You can find
+more details and usage examples in the :file:`custom_model_example.py` file.
+
+class Album(models.Model):
+    artist = models.ForeignKey(Musician, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    release_date = models.DateField()
+    num_stars = models.IntegerField()
 
 Field types
 -----------
@@ -134,6 +150,7 @@ Each field takes a certain set of field-specific arguments (documented in the
 :attr:`~django.db.models.CharField.max_length` argument which specifies the size
 of the ``VARCHAR`` database field used to store the data.
 
+There's also a set of common arguments available to all field types. All are
 There's also a set of common arguments available to all field types. All are
 optional. They're fully explained in the :ref:`reference
 <common-model-field-options>`, but here's a quick summary of the most often-used
