@@ -1,0 +1,16 @@
+from django.test import TestCase
+from .models import MyObject, MyChoice
+
+class EnumTest(TestCase):
+    def setUp(self) -> None:
+        self.my_object = MyObject.objects.create(my_str_value=MyChoice.FIRST_CHOICE)
+
+    def test_created_object_is_str(self):
+        my_object = self.my_object
+        self.assertIsInstance(my_object.my_str_value, str)
+        self.assertEqual(str(my_object.my_str_value), "first")
+
+    def test_retrieved_object_is_str(self):
+        my_object = MyObject.objects.last()
+        self.assertIsInstance(my_object.my_str_value, str)
+        self.assertEqual(str(my_object.my_str_value), "first")
