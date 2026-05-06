@@ -124,13 +124,20 @@ class Command(BaseCommand):
                             "self" if relations[column_name][1] == table_name
                             else table2model(relations[column_name][1])
                         )
+                        
+                        # Find the constraint that corresponds to this relation
+                        for constraint in constraints.values():
+                            if constraint['foreign_key'] and constraint['columns'] == [column_name]:
+                                referenced_column = constraint['foreign_key'][1]
+                                if referenced_column != primary_key_column:
+                                    extra_params['to_field'] = referenced_column
+                                break
+                        
                         if rel_to in known_models:
                             field_type = '%s(%s' % (rel_type, rel_to)
                         else:
                             field_type = "%s('%s'" % (rel_type, rel_to)
                     else:
-                        # Calling `get_field_type` to get the field type string and any
-                        # additional parameters and notes.
                         field_type, field_params, field_notes = self.get_field_type(connection, table_name, row)
                         extra_params.update(field_params)
                         comment_notes.extend(field_notes)
