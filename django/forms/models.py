@@ -1433,6 +1433,9 @@ class ModelChoiceIteratorValue:
             other = other.value
         return self.value == other
 
+    def __hash__(self):
+        return hash(self.value)
+
 
 class ModelChoiceIterator(BaseChoiceIterator):
     def __init__(self, field):
