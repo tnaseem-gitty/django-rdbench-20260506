@@ -71,6 +71,31 @@ class CommandParser(ArgumentParser):
         else:
             raise CommandError("Error: %s" % message)
 
+    def add_subparsers(self, **kwargs):
+        # Get the subparsers action
+        subparsers_action = super().add_subparsers(**kwargs)
+        
+        # Store the original add_parser method
+        original_add_parser = subparsers_action.add_parser
+        
+        # Replace with our custom method
+        subparsers_action.add_parser = lambda name, **sub_kwargs: self.create_subparser(original_add_parser, name, **sub_kwargs)
+        
+        return subparsers_action
+
+    def create_subparser(self, original_add_parser, name, **kwargs):
+        # Ensure that the subparser inherits only necessary attributes
+        for key in ['missing_args_message', 'called_from_command_line']:
+            if key not in kwargs and hasattr(self, key):
+                kwargs[key] = getattr(self, key)
+        
+        # Create the subparser using the original method
+        parser = original_add_parser(name, **kwargs)
+        
+        # Ensure the subparser is also a CommandParser
+        parser.__class__ = CommandParser
+        
+        return parser
 
 def handle_default_options(options):
     """
