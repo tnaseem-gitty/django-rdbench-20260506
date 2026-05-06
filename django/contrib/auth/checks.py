@@ -4,6 +4,7 @@ from types import MethodType
 from django.apps import apps
 from django.conf import settings
 from django.core import checks
+from django.db.models import UniqueConstraint
 
 from .management import _get_builtin_permissions
 
@@ -52,7 +53,15 @@ def check_user_model(app_configs=None, **kwargs):
         )
 
     # Check that the username field is unique
-    if not cls._meta.get_field(cls.USERNAME_FIELD).unique:
+    username_field = cls._meta.get_field(cls.USERNAME_FIELD)
+    is_unique = username_field.unique
+    if not is_unique:
+        # Check for UniqueConstraint in Meta.constraints
+        for constraint in cls._meta.constraints:
+            if isinstance(constraint, UniqueConstraint) and cls.USERNAME_FIELD in constraint.fields:
+                is_unique = True
+                break
+    if not is_unique:
         if (settings.AUTHENTICATION_BACKENDS ==
                 ['django.contrib.auth.backends.ModelBackend']):
             errors.append(

@@ -82,8 +82,31 @@ class UserModelChecksTests(SimpleTestCase):
                     hint='Ensure that your authentication backend(s) can handle non-unique usernames.',
                     obj=CustomUserNonUniqueUsername,
                     id='auth.W004',
-                ),
-            ])
+                )])
+
+    def test_username_unique_constraint(self):
+        """
+        A USERNAME_FIELD with a UniqueConstraint should not raise an error.
+        """
+        from django.contrib.auth.models import AbstractBaseUser
+        from django.db import models
+        from django.test.utils import isolate_apps
+        from unittest.mock import patch
+
+        with isolate_apps('auth_tests'):
+            class CustomUserUniqueConstraint(AbstractBaseUser):
+                username = models.CharField(max_length=30)
+                USERNAME_FIELD = 'username'
+
+                class Meta:
+                    app_label = 'auth_tests'
+                    constraints = [
+                        models.UniqueConstraint(fields=['username'], name='unique_username')
+                    ]
+
+            with patch('django.contrib.auth.get_user_model', return_value=CustomUserUniqueConstraint):
+                errors = checks.run_checks()
+                self.assertEqual(errors, [])
 
     @override_settings(AUTH_USER_MODEL='auth_tests.BadUser')
     def test_is_anonymous_authenticated_methods(self):
