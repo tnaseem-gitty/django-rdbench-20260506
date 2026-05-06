@@ -516,21 +516,23 @@ class Field(RegisterLookupMixin):
     def __eq__(self, other):
         # Needed for @total_ordering
         if isinstance(other, Field):
-            return self.creation_counter == other.creation_counter
+            return (self.creation_counter == other.creation_counter and
+                    self.model == other.model)
         return NotImplemented
 
     def __lt__(self, other):
         # This is needed because bisect does not take a comparison function.
         if isinstance(other, Field):
+            if self.model != other.model:
+                return self.model < other.model
             return self.creation_counter < other.creation_counter
         return NotImplemented
 
     def __hash__(self):
-        return hash(self.creation_counter)
+        return hash((self.creation_counter, self.model))
 
     def __deepcopy__(self, memodict):
-        # We don't have to deepcopy very much here, since most things are not
-        # intended to be altered after initial creation.
+        # We don't have to deepcopy very much here, since most things are not        # intended to be altered after initial creation.
         obj = copy.copy(self)
         if self.remote_field:
             obj.remote_field = copy.copy(self.remote_field)
