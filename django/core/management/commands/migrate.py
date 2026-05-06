@@ -302,6 +302,8 @@ class Command(BaseCommand):
             elif action == "render_success":
                 elapsed = " (%.3fs)" % (time.monotonic() - self.start) if compute_time else ""
                 self.stdout.write(self.style.SUCCESS(" DONE" + elapsed))
+                self.stdout.flush()
+
 
     def sync_apps(self, connection, app_labels):
         """Run the old syncdb-style operation on a list of app_labels."""
