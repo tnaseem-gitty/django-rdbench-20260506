@@ -7,17 +7,17 @@ from django.db import models
 
 
 class DumbCategory(models.Model):
-    pass
+    class Meta:
+        app_label = 'queries'
 
 
 class ProxyCategory(DumbCategory):
     class Meta:
-        proxy = True
-
+        app_label = 'queries'
 
 class NamedCategory(DumbCategory):
-    name = models.CharField(max_length=10)
-
+    class Meta:
+        app_label = 'queries'
     def __str__(self):
         return self.name
 
@@ -33,7 +33,7 @@ class Tag(models.Model):
     category = models.ForeignKey(NamedCategory, models.SET_NULL, null=True, default=None)
 
     class Meta:
-        ordering = ['name']
+        app_label = 'queries'
 
     def __str__(self):
         return self.name
@@ -45,7 +45,7 @@ class Note(models.Model):
     tag = models.ForeignKey(Tag, models.SET_NULL, blank=True, null=True)
 
     class Meta:
-        ordering = ['note']
+        app_label = 'queries'
 
     def __str__(self):
         return self.note
@@ -63,14 +63,14 @@ class Annotation(models.Model):
     tag = models.ForeignKey(Tag, models.CASCADE)
     notes = models.ManyToManyField(Note)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        app_label = 'queries'
 
 
 class DateTimePK(models.Model):
     date = models.DateTimeField(primary_key=True, auto_now_add=True)
-
-
+    class Meta:
+        app_label = 'queries'
 class ExtraInfo(models.Model):
     info = models.CharField(max_length=100)
     note = models.ForeignKey(Note, models.CASCADE, null=True)
@@ -78,7 +78,7 @@ class ExtraInfo(models.Model):
     date = models.ForeignKey(DateTimePK, models.SET_NULL, null=True)
 
     class Meta:
-        ordering = ['info']
+        app_label = 'queries'
 
     def __str__(self):
         return self.info
@@ -90,7 +90,7 @@ class Author(models.Model):
     extra = models.ForeignKey(ExtraInfo, models.CASCADE)
 
     class Meta:
-        ordering = ['name']
+        app_label = 'queries'
 
     def __str__(self):
         return self.name
@@ -105,7 +105,7 @@ class Item(models.Model):
     note = models.ForeignKey(Note, models.CASCADE)
 
     class Meta:
-        ordering = ['-note', 'name']
+        app_label = 'queries'
 
     def __str__(self):
         return self.name
@@ -119,8 +119,8 @@ class Report(models.Model):
         return self.name
 
 
-class ReportComment(models.Model):
-    report = models.ForeignKey(Report, models.CASCADE)
+    class Meta:
+        app_label = 'queries'
 
 
 class Ranking(models.Model):

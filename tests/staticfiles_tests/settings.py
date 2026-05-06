@@ -1,7 +1,11 @@
+SECRET_KEY = 'dummy_secret_key_for_testing'
+
 import os.path
 
 TEST_ROOT = os.path.dirname(__file__)
 
+TEST_ROOT = os.path.dirname(__file__)
+from django.db.models import Exists, OuterRef, Q
 TEST_SETTINGS = {
     'MEDIA_URL': '/media/',
     'STATIC_URL': '/static/',
