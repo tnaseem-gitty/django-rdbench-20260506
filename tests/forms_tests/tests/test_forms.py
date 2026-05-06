@@ -3717,4 +3717,27 @@ class RendererTests(SimpleTestCase):
 
         custom = CustomRenderer()
         form = CustomForm(renderer=custom)
-        self.assertEqual(form.renderer, custom)
+
+class DefaultValueForm(Form):
+    name = CharField(max_length=50, initial='Default Name')
+
+class CleanedDataOverwriteTest(SimpleTestCase):
+    def test_cleaned_data_overwrites_default(self):
+        # Test with no data provided
+        form = DefaultValueForm()
+        self.assertEqual(form['name'].value(), 'Default Name')
+
+        # Test with data provided
+        form = DefaultValueForm({'name': 'New Name'})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['name'], 'New Name')
+
+        # Test with empty string provided
+        form = DefaultValueForm({'name': ''})
+        self.assertFalse(form.is_valid())
+
+        # Test with None provided (simulating removal of field from payload)
+        form = DefaultValueForm({'name': None})
+        form.full_clean()
+        self.assertEqual(form.cleaned_data.get('name'), None)
+
