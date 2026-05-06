@@ -883,3 +883,47 @@ class OptimizerTests(SimpleTestCase):
                 migrations.CreateModel("Phou", [("name", models.CharField(max_length=255))]),
             ],
         )
+
+    def test_optimize_alter_foo_together(self):
+        """
+        Test that multiple AlterUniqueTogether and AlterIndexTogether operations
+        are optimized into a single operation each.
+        """
+        self.assertOptimizesTo(
+            [
+                migrations.AlterUniqueTogether(
+                    name='mymodel',
+                    unique_together=set(),
+                ),
+                migrations.AlterIndexTogether(
+                    name='mymodel',
+                    index_together=set(),
+                ),
+                migrations.AlterUniqueTogether(
+                    name='mymodel',
+                    unique_together={("col1",)},
+                ),
+                migrations.AlterIndexTogether(
+                    name='mymodel',
+                    index_together={("col1",)},
+                ),
+                migrations.AlterUniqueTogether(
+                    name='mymodel',
+                    unique_together={("col1", "col2")},
+                ),
+                migrations.AlterIndexTogether(
+                    name='mymodel',
+                    index_together={("col1", "col2")},
+                ),
+            ],
+            [
+                migrations.AlterUniqueTogether(
+                    name='mymodel',
+                    unique_together={("col1", "col2")},
+                ),
+                migrations.AlterIndexTogether(
+                    name='mymodel',
+                    index_together={("col1", "col2")},
+                ),
+            ],
+        )

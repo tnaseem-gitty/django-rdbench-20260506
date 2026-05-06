@@ -1,7 +1,9 @@
 from django.db.migrations.utils import get_migration_name_timestamp
 from django.db.transaction import atomic
+from django.db.migrations.operations.models import AlterTogetherOptionOperation
 
 from .exceptions import IrreversibleError
+
 
 
 class Migration:
@@ -97,6 +99,9 @@ class Migration:
         Return the resulting project state for efficient reuse by following
         Migrations.
         """
+        # Optimize AlterFooTogether operations
+        self.operations = AlterTogetherOptionOperation.optimize_together(self.operations)
+
         for operation in self.operations:
             # If this operation cannot be represented as SQL, place a comment
             # there instead
@@ -138,6 +143,9 @@ class Migration:
         2. The operations are applied in reverse order using the states
            recorded in step 1.
         """
+        # Optimize AlterFooTogether operations
+        self.operations = AlterTogetherOptionOperation.optimize_together(self.operations)
+
         # Construct all the intermediate states we need for a reverse migration
         to_run = []
         new_state = project_state

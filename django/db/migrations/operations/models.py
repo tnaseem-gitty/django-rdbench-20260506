@@ -528,6 +528,35 @@ class AlterTogetherOptionOperation(ModelOptionOperation):
     def migration_name_fragment(self):
         return 'alter_%s_%s' % (self.name_lower, self.option_name)
 
+    @classmethod
+    def optimize_together(cls, operations):
+        """
+        Optimize multiple AlterFooTogether operations into one.
+        """
+        optimized = []
+        current_op = None
+
+        for op in operations:
+            if isinstance(op, cls):
+                if current_op is None:
+                    current_op = op
+                elif current_op.name == op.name:
+                    # Merge the operations
+                    current_op.option_value = op.option_value
+                else:
+                    optimized.append(current_op)
+                    current_op = op
+            else:
+                if current_op is not None:
+                    optimized.append(current_op)
+                    current_op = None
+                optimized.append(op)
+
+        if current_op is not None:
+            optimized.append(current_op)
+
+        return optimized
+
 
 class AlterUniqueTogether(AlterTogetherOptionOperation):
     """
