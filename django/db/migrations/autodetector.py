@@ -164,6 +164,7 @@ class MigrationAutodetector:
         self._generate_through_model_map()
 
         # Generate non-rename model operations
+        # Generate non-rename model operations
         self.generate_deleted_models()
         self.generate_created_models()
         self.generate_deleted_proxies()

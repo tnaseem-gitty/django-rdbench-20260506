@@ -2454,3 +2454,28 @@ class AutodetectorTests(TestCase):
         self.assertNumberMigrations(changes, 'app', 1)
         self.assertOperationTypes(changes, 'app', 0, ['DeleteModel'])
         self.assertOperationAttributes(changes, 'app', 0, 0, name='Dog')
+    def test_move_field_to_subclass(self):
+        # Initial state with a field on the parent model
+        parent = ModelState('app', 'Parent', [
+            ("id", models.AutoField(primary_key=True)),
+            ("name", models.CharField(max_length=100)),
+        ])
+        child = ModelState('app', 'Child', [], bases=('app.Parent',))
+
+        # New state with the field moved to the child model
+        parent_new = ModelState('app', 'Parent', [
+            ("id", models.AutoField(primary_key=True)),
+        ])
+        child_new = ModelState('app', 'Child', [
+            ("name", models.CharField(max_length=100)),
+        ], bases=('app.Parent',))
+
+        changes = self.get_changes([parent, child], [parent_new, child_new])
+
+        # Assert that we have the correct number and type of operations
+        self.assertNumberMigrations(changes, 'app', 1)
+        self.assertOperationTypes(changes, 'app', 0, ['RemoveField', 'AddField'])
+
+        # Assert that the operations are in the correct order
+        self.assertOperationAttributes(changes, 'app', 0, 0, name='name', model_name='parent')
+        self.assertOperationAttributes(changes, 'app', 0, 1, name='name', model_name='child')
