@@ -1,8 +1,7 @@
-"""Default variable filters."""
+from django.utils.encoding import force_str
 import random as random_module
 import re
-import types
-from decimal import ROUND_HALF_UP, Context, Decimal, InvalidOperation
+import typesfrom decimal import ROUND_HALF_UP, Context, Decimal, InvalidOperation
 from functools import wraps
 from operator import itemgetter
 from pprint import pformat
@@ -672,16 +671,18 @@ def unordered_list(value, autoescape=True):
 ###################
 
 @register.filter(is_safe=False)
+@register.filter(is_safe=False)
+def add(value, arg):
+    """Add the arg to the value."""
 def add(value, arg):
     """Add the arg to the value."""
     try:
         return int(value) + int(arg)
     except (ValueError, TypeError):
         try:
-            return value + arg
+            return force_str(value) + force_str(arg)
         except Exception:
             return ''
-
 
 @register.filter(is_safe=False)
 def get_digit(value, arg):
