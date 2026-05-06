@@ -20,15 +20,13 @@ def get_template_directories():
         items.update(cwd / to_path(dir) for dir in backend.engine.dirs if dir)
 
         for loader in backend.engine.template_loaders:
-            if not hasattr(loader, "get_dirs"):
-                continue
+            if not hasattr(loader, "get_dirs"):                continue
             items.update(
                 cwd / to_path(directory)
                 for directory in loader.get_dirs()
                 if directory and not is_django_path(directory)
             )
     return items
-
 
 def reset_loaders():
     from django.forms.renderers import get_default_renderer
