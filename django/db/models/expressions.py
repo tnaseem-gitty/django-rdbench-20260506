@@ -747,10 +747,12 @@ class CombinedExpression(SQLiteNumericMixin, Expression):
     def _resolve_output_field(self):
         # We avoid using super() here for reasons given in
         # Expression._resolve_output_field()
+        if self.connector == self.MOD:
+            if isinstance(self.lhs.output_field, fields.DecimalField) or isinstance(self.rhs.output_field, fields.DecimalField):
+                return fields.DecimalField()
         combined_type = _resolve_combined_type(
             self.connector,
-            type(self.lhs._output_field_or_none),
-            type(self.rhs._output_field_or_none),
+            type(self.lhs._output_field_or_none),            type(self.rhs._output_field_or_none),
         )
         if combined_type is None:
             raise FieldError(
