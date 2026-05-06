@@ -147,6 +147,15 @@ class ServerHandler(simple_server.ServerHandler):
         self.get_stdin().read()
         super().close()
 
+    def finish_response(self):
+        if self.request_handler.command == 'HEAD':
+            # For HEAD requests, we need to remove the response body
+            self.headers_sent = False
+            self.send_headers()
+        else:
+            super().finish_response()
+
+
 
 class WSGIRequestHandler(simple_server.WSGIRequestHandler):
     protocol_version = "HTTP/1.1"
