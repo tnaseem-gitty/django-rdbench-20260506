@@ -1241,11 +1241,10 @@ class BaseDatabaseSchemaEditor:
             return self.quote_name(self._create_index_name(*args, **kwargs))
 
         compiler = Query(model, alias_cols=False).get_compiler(connection=self.connection)
-        table = Table(model._meta.db_table, self.quote_name)
+        table = model._meta.db_table
         if name is None:
             name = IndexName(model._meta.db_table, columns, '_uniq', create_unique_name)
-        else:
-            name = self.quote_name(name)
+        else:            name = self.quote_name(name)
         if condition or include or opclasses or expressions:
             sql = self.sql_create_unique_index
         else:
