@@ -62,7 +62,7 @@ class BaseDatabaseSchemaEditor:
     sql_update_with_default = "UPDATE %(table)s SET %(column)s = %(default)s WHERE %(column)s IS NULL"
 
     sql_unique_constraint = "UNIQUE (%(columns)s)"
-    sql_check_constraint = "CHECK (%(check)s)"
+    sql_check_constraint = "CHECK (%(check)s)"  # TODO: Ensure 'check' doesn't include table name
     sql_delete_constraint = "ALTER TABLE %(table)s DROP CONSTRAINT %(name)s"
     sql_constraint = "CONSTRAINT %(name)s %(constraint)s"
 
