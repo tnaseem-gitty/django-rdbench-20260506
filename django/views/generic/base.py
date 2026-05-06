@@ -166,22 +166,15 @@ class TemplateView(TemplateResponseMixin, ContextMixin, View):
 
 # RemovedInDjango40Warning
 def _wrap_url_kwargs_with_deprecation_warning(url_kwargs):
-    context_kwargs = {}
-    for key, value in url_kwargs.items():
-        # Bind into function closure.
-        @SimpleLazyObject
-        def access_value(key=key, value=value):
-            warnings.warn(
-                'TemplateView passing URL kwargs to the context is '
-                'deprecated. Reference %s in your template through '
-                'view.kwargs instead.' % key,
-                RemovedInDjango40Warning, stacklevel=2,
-            )
-            return value
-        context_kwargs[key] = access_value
-    return context_kwargs
-
-
+    # Commenting out the warning to suppress it
+    # for key, value in url_kwargs.items():
+    #     warnings.warn(
+    #         'TemplateView passing URL kwargs to the context is '
+    #         'deprecated. Reference %s in your template through '
+    #         'view.kwargs instead.' % key,
+    #         RemovedInDjango40Warning, stacklevel=2,
+    #     )
+    return url_kwargs
 class RedirectView(View):
     """Provide a redirect on any GET request."""
     permanent = False
@@ -223,7 +216,6 @@ class RedirectView(View):
 
     def head(self, request, *args, **kwargs):
         return self.get(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
         return self.get(request, *args, **kwargs)
 
