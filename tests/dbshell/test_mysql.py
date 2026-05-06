@@ -58,9 +58,9 @@ class MySqlDbshellCommandTestCase(SimpleTestCase):
                 'HOST': 'settinghost',
                 'PORT': settings_port,
                 'OPTIONS': {
-                    'db': 'optiondbname',
+                    'database': 'optiondbname',
                     'user': 'optionuser',
-                    'passwd': 'optionpassword',
+                    'password': 'optionpassword',
                     'host': 'optionhost',
                     'port': options_port,
                 },
