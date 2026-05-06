@@ -759,9 +759,42 @@ class RadioSelect(ChoiceWidget):
     template_name = 'django/forms/widgets/radio.html'
     option_template_name = 'django/forms/widgets/radio_option.html'
 
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        if hasattr(self.choices, 'field') and hasattr(self.choices.field, 'queryset'):
+            model_field = self.choices.field.queryset.model._meta.get_field(self.choices.field.to_field_name or 'pk')
+            if self.choices.field.required and not model_field.blank:
+                context['widget']['optgroups'] = [
+                    (group, [option for option in options if option['value'] != ''], index)
+                    for group, options, index in context['widget']['optgroups']
+                ]
+        return context
 
-class CheckboxSelectMultiple(ChoiceWidget):
-    allow_multiple_selected = True
+    def optgroups(self, name, value, attrs=None):
+        groups = super().optgroups(name, value, attrs)
+        # Check if this is a ModelChoiceField and if the related model field is not blank
+        if hasattr(self.choices, 'field') and hasattr(self.choices.field, 'queryset'):
+            model_field = self.choices.field.queryset.model._meta.get_field(self.choices.field.to_field_name or 'pk')
+            if not model_field.blank:
+                # Filter out the empty option
+                return [(group, [option for option in options if option['value'] != ''], index)
+                        for group, options, index in groups]
+        return groups
+
+    def value_omitted_from_data(self, data, files, name):
+        # HTML checkboxes don't appear in POST data if not checked, so it's
+        # never known if the value is actually omitted.
+        return False
+
+    def id_for_label(self, id_, index=None):
+        """"
+        Don't include for="field_0" in <label> because clicking such a label
+        would toggle the first checkbox.
+        """
+        if index is None:
+            return ''
+        return super().id_for_label(id_, index)
+class CheckboxSelectMultiple(SelectMultiple):
     input_type = 'checkbox'
     template_name = 'django/forms/widgets/checkbox_select.html'
     option_template_name = 'django/forms/widgets/checkbox_option.html'
@@ -784,7 +817,6 @@ class CheckboxSelectMultiple(ChoiceWidget):
         if index is None:
             return ''
         return super().id_for_label(id_, index)
-
 
 class MultiWidget(Widget):
     """

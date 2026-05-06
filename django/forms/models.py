@@ -1173,12 +1173,6 @@ class ModelChoiceIterator:
 
 class ModelChoiceField(ChoiceField):
     """A ChoiceField whose choices are a model QuerySet."""
-    # This class is a subclass of ChoiceField for purity, but it doesn't
-    # actually use any of ChoiceField's implementation.
-    default_error_messages = {
-        'invalid_choice': _('Select a valid choice. That choice is not one of'
-                            ' the available choices.'),
-    }
     iterator = ModelChoiceIterator
 
     def __init__(self, queryset, *, empty_label="---------",
@@ -1199,6 +1193,18 @@ class ModelChoiceField(ChoiceField):
         self.queryset = queryset
         self.limit_choices_to = limit_choices_to   # limit the queryset later.
         self.to_field_name = to_field_name
+
+        self._set_queryset(queryset)
+        self._set_empty_label(empty_label)
+
+    def _set_empty_label(self, empty_label):
+        # Check if the field is not blank in the model
+        if self.queryset is not None and self.queryset.model is not None:
+            model_field = self.queryset.model._meta.get_field(self.to_field_name or 'pk')
+            if not model_field.blank and self.required:
+                self.empty_label = None
+            else:
+                self.empty_label = empty_label
 
     def get_limit_choices_to(self):
         """
