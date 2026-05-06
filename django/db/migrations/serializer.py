@@ -168,6 +168,12 @@ class FunctionTypeSerializer(BaseSerializer):
         ):
             klass = self.value.__self__
             module = klass.__module__
+            # Check if it's a nested class
+            if '.' in klass.__qualname__:
+                outer_class, inner_class = klass.__qualname__.rsplit('.', 1)
+                return "%s.%s.%s.%s" % (module, outer_class, inner_class, self.value.__name__), {
+                    "import %s" % module
+                }
             return "%s.%s.%s" % (module, klass.__name__, self.value.__name__), {
                 "import %s" % module
             }
