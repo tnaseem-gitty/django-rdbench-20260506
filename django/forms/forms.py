@@ -398,7 +398,10 @@ class BaseForm:
                     self.cleaned_data[name] = value
             except ValidationError as e:
                 self.add_error(name, e)
-
+        # Overwrite default values with cleaned_data
+        for name, value in self.cleaned_data.items():
+            if name in self.fields and not self.data.get(name):
+                self.data[name] = value
     def _clean_form(self):
         try:
             cleaned_data = self.clean()
