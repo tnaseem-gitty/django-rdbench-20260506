@@ -1,7 +1,13 @@
+STATIC_URL = '/static/'
+
 import os
-import shutil
 import tempfile
 
+from django import conf
+from django.test import SimpleTestCase
+from django.test.utils import extend_sys_path
+import shutil
+import tempfile
 from django import conf
 from django.test import SimpleTestCase
 from django.test.utils import extend_sys_path

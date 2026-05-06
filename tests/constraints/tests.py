@@ -95,11 +95,17 @@ class BaseConstraintTests(SimpleTestCase):
         with self.assertRaisesMessage(RemovedInDjango60Warning, msg):
             BaseConstraint("name", "violation error message")
 
-    def test_name_required(self):
+    def test_custom_violation_error_code(self):
+        c = BaseConstraint(
+            name="base_name",
+            violation_error_code="custom_code",
+        )
+        with self.assertRaises(ValidationError) as cm:
+            c.validate(None, None)
+        self.assertEqual(cm.exception.code, "custom_code")
         msg = (
             "BaseConstraint.__init__() missing 1 required keyword-only argument: 'name'"
-        )
-        with self.assertRaisesMessage(TypeError, msg):
+        )        with self.assertRaisesMessage(TypeError, msg):
             BaseConstraint()
 
     @ignore_warnings(category=RemovedInDjango60Warning)

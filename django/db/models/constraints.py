@@ -22,11 +22,10 @@ class BaseConstraint:
 
     # RemovedInDjango60Warning: When the deprecation ends, replace with:
     # def __init__(self, *, name, violation_error_message=None):
-    def __init__(self, *args, name=None, violation_error_message=None):
+    def __init__(self, *args, name=None, violation_error_message=None, violation_error_code=None):
         # RemovedInDjango60Warning.
         if name is None and not args:
-            raise TypeError(
-                f"{self.__class__.__name__}.__init__() missing 1 required keyword-only "
+            raise TypeError(                f"{self.__class__.__name__}.__init__() missing 1 required keyword-only "
                 f"argument: 'name'"
             )
         self.name = name
@@ -34,10 +33,21 @@ class BaseConstraint:
             self.violation_error_message = violation_error_message
         else:
             self.violation_error_message = self.default_violation_error_message
+        self.violation_error_code = violation_error_code
         # RemovedInDjango60Warning.
         if args:
             warnings.warn(
                 f"Passing positional arguments to {self.__class__.__name__} is "
+                f"deprecated.",
+                RemovedInDjango60Warning,
+                stacklevel=2,
+            )
+            for arg, attr in zip(args, ["name", "violation_error_message"]):
+                if arg:
+                    setattr(self, attr, arg)
+        # RemovedInDjango60Warning.
+        if args:
+            warnings.warn(                f"Passing positional arguments to {self.__class__.__name__} is "
                 f"deprecated.",
                 RemovedInDjango60Warning,
                 stacklevel=2,
@@ -112,10 +122,11 @@ class CheckConstraint(BaseConstraint):
         against = instance._get_field_value_map(meta=model._meta, exclude=exclude)
         try:
             if not Q(self.check).check(against, using=using):
-                raise ValidationError(self.get_violation_error_message())
+                raise ValidationError(self.get_violation_error_message(), code=self.violation_error_code)
         except FieldError:
             pass
-
+        except FieldError:
+            pass
     def __repr__(self):
         return "<%s: check=%s name=%s%s>" % (
             self.__class__.__qualname__,
@@ -385,21 +396,22 @@ class UniqueConstraint(BaseConstraint):
         if not self.condition:
             if queryset.exists():
                 if self.expressions:
-                    raise ValidationError(self.get_violation_error_message())
+                    raise ValidationError(self.get_violation_error_message(), code=self.violation_error_code)
                 # When fields are defined, use the unique_error_message() for
                 # backward compatibility.
                 for model, constraints in instance.get_constraints():
                     for constraint in constraints:
                         if constraint is self:
                             raise ValidationError(
-                                instance.unique_error_message(model, self.fields)
+                                instance.unique_error_message(model, self.fields), code=self.violation_error_code
                             )
         else:
-            against = instance._get_field_value_map(meta=model._meta, exclude=exclude)
-            try:
+            against = instance._get_field_value_map(meta=model._meta, exclude=exclude)            try:
                 if (self.condition & Exists(queryset.filter(self.condition))).check(
                     against, using=using
                 ):
-                    raise ValidationError(self.get_violation_error_message())
+                    raise ValidationError(self.get_violation_error_message(), code=self.violation_error_code)
+            except FieldError:
+                pass
             except FieldError:
                 pass
