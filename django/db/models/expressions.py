@@ -1148,9 +1148,10 @@ class Subquery(Expression):
 
 
 class Exists(Subquery):
+    def __rand__(self, other):
+        return self & other
     template = 'EXISTS(%(subquery)s)'
     output_field = fields.BooleanField()
-
     def __init__(self, queryset, negated=False, **kwargs):
         self.negated = negated
         super().__init__(queryset, **kwargs)

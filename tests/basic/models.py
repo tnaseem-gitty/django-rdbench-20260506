@@ -1,9 +1,8 @@
 """
-Bare-bones model
+from tests.basic.models import Article
 
 This is a basic model with only two non-primary-key fields.
-"""
-import uuid
+"""import uuid
 
 from django.db import models
 
