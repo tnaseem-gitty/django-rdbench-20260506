@@ -657,11 +657,11 @@ def modelform_factory(
     # creating needs to inherit from the parent's inner meta.
     bases = (form.Meta,) if hasattr(form, "Meta") else ()
     Meta = type("Meta", bases, attrs)
-    if formfield_callback:
+    if not formfield_callback and hasattr(form.Meta, 'formfield_callback'):
+        formfield_callback = form.Meta.formfield_callback
         Meta.formfield_callback = staticmethod(formfield_callback)
     # Give this new form class a reasonable name.
     class_name = model.__name__ + "Form"
-
     # Class attributes for the new form class.
     form_class_attrs = {"Meta": Meta}
 
