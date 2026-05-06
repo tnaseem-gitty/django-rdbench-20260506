@@ -70,12 +70,13 @@ class CommandParser(ArgumentParser):
             super().error(message)
         else:
             raise CommandError("Error: %s" % message)
-
-
+    def add_subparsers(self, **kwargs):
+        subparsers = super().add_subparsers(**kwargs)
+        if 'dest' in kwargs:
+            subparsers.dest = kwargs['dest']
 def handle_default_options(options):
     """
-    Include any default options that all commands should accept here
-    so that ManagementUtility can handle them before searching for
+    Include any default options that all commands should accept here    so that ManagementUtility can handle them before searching for
     user commands.
     """
     if options.settings:
