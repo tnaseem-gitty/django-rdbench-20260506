@@ -122,11 +122,10 @@ class Command(BaseCommand):
                             rel_type = 'ForeignKey'
                         rel_to = (
                             "self" if relations[column_name][1] == table_name
-                            else table2model(relations[column_name][1])
+                            else f"{table2model(relations[column_name][1])}({relations[column_name][0]})"
                         )
                         if rel_to in known_models:
-                            field_type = '%s(%s' % (rel_type, rel_to)
-                        else:
+                            field_type = '%s(%s' % (rel_type, rel_to)                        else:
                             field_type = "%s('%s'" % (rel_type, rel_to)
                     else:
                         # Calling `get_field_type` to get the field type string and any
