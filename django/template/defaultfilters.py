@@ -1,40 +1,37 @@
-"""Default variable filters."""
-import random as random_module
-import re
-import types
-from decimal import ROUND_HALF_UP, Context, Decimal, InvalidOperation
-from functools import wraps
-from operator import itemgetter
-from pprint import pformat
-from urllib.parse import quote
+from django.template import Template, Context
+from django.utils.translation import gettext_lazy as _
+from django.conf import settings
+import django
 
-from django.utils import formats
-from django.utils.dateformat import format, time_format
-from django.utils.encoding import iri_to_uri
-from django.utils.html import (
-    avoid_wrapping, conditional_escape, escape, escapejs,
-    json_script as _json_script, linebreaks, strip_tags, urlize as _urlize,
-)
-from django.utils.safestring import SafeData, mark_safe
-from django.utils.text import (
-    Truncator, normalize_newlines, phone2numeric, slugify as _slugify, wrap,
-)
-from django.utils.timesince import timesince, timeuntil
-from django.utils.translation import gettext, ngettext
+# Configure Django settings
+if not settings.configured:
+    settings.configure(TEMPLATES=[{
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+    }])
+django.setup()
 
-from .base import Variable, VariableDoesNotExist
-from .library import Library
+# Test cases
+template1 = Template("{{ 'Hello, ' | add:name }}")
+template2 = Template("{{ name | add:' World' }}")
+template3 = Template("{{ 'Hello, ' | add:'World' }}")
 
-register = Library()
+context1 = Context({'name': _('Lazy World')})
+context2 = Context({'name': 'Regular World'})
 
+print("Test 1 (string + lazy string):")
+print(template1.render(context1))
 
-#######################
-# STRING DECORATOR    #
-#######################
+print("\nTest 2 (lazy string + string):")
+print(template2.render(context1))
 
-def stringfilter(func):
-    """
-    Decorator for filters which should only receive strings. The object
+print("\nTest 3 (string + regular string):")
+print(template1.render(context2))
+
+print("\nTest 4 (string + string, no lazy strings):")
+print(template3.render(Context()))
+
+print("\nScript completed.")
     passed as the first positional argument will be converted to a string.
     """
     def _dec(*args, **kwargs):
@@ -674,11 +671,12 @@ def unordered_list(value, autoescape=True):
 @register.filter(is_safe=False)
 def add(value, arg):
     """Add the arg to the value."""
+    from django.utils.encoding import force_str
     try:
         return int(value) + int(arg)
     except (ValueError, TypeError):
         try:
-            return value + arg
+            return force_str(value) + force_str(arg)
         except Exception:
             return ''
 
