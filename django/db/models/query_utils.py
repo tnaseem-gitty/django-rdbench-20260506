@@ -87,11 +87,13 @@ class Q(tree.Node):
         args, kwargs = (), {}
         if len(self.children) == 1 and not isinstance(self.children[0], Q):
             child = self.children[0]
-            kwargs = {child[0]: child[1]}
+            if isinstance(child, tuple) and len(child) == 2:
+                kwargs = {child[0]: child[1]}
+            else:
+                args = (child,)
         else:
             args = tuple(self.children)
-            if self.connector != self.default:
-                kwargs = {'_connector': self.connector}
+            if self.connector != self.default:                kwargs = {'_connector': self.connector}
         if self.negated:
             kwargs['_negated'] = True
         return path, args, kwargs
