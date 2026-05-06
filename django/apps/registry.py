@@ -376,17 +376,16 @@ class Apps:
         # Call expire cache on each model. This will purge
         # the relation tree and the fields cache.
         self.get_models.cache_clear()
+        self.get_swappable_settings_name.cache_clear()
         if self.ready:
             # Circumvent self.get_models() to prevent that the cache is refilled.
             # This particularly prevents that an empty value is cached while cloning.
             for app_config in self.app_configs.values():
                 for model in app_config.get_models(include_auto_created=True):
                     model._meta._expire_cache()
-
     def lazy_model_operation(self, function, *model_keys):
         """
-        Take a function and a number of ("app_label", "modelname") tuples, and
-        when all the corresponding models have been imported and registered,
+        Take a function and a number of ("app_label", "modelname") tuples, and        when all the corresponding models have been imported and registered,
         call the function with the model classes as its arguments.
 
         The function passed to this method must accept exactly n models as
