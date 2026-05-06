@@ -155,12 +155,11 @@ class Engine:
             t = self.select_template(template_name)
         else:
             t = self.get_template(template_name)
-        # Django < 1.8 accepted a Context in `context` even though that's
-        # unintended. Preserve this ability but don't rewrap `context`.
-        if isinstance(context, Context):
-            return t.render(context)
-        else:
-            return t.render(Context(context))
+        if context is None:
+            context = {}
+        if not isinstance(context, Context):
+            context = Context(context, autoescape=self.autoescape)
+        return t.render(context)
 
     def select_template(self, template_name_list):
         """

@@ -155,6 +155,9 @@ class Template:
         self.source = str(template_string)  # May be lazy.
         self.nodelist = self.compile_nodelist()
 
+    @property
+    def autoescape(self):
+        return self.engine.autoescape
     def __iter__(self):
         for node in self.nodelist:
             yield from node
