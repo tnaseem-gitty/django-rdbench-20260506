@@ -419,3 +419,6 @@ to remove usage of these features.
 
 * Support for ``SimpleTestCase.allow_database_queries`` and
   ``TransactionTestCase.multi_db`` is removed.
+
+* Fixed a bug in CheckboxInput widget where the 'checked' attribute would persist across multiple widgets in a SplitArrayField with BooleanField.
+
