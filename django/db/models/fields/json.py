@@ -81,11 +81,10 @@ class JSONField(CheckFieldDefaultMixin, Field):
     def get_prep_value(self, value):
         if value is None:
             return value
-        return json.dumps(value, cls=self.encoder)
+        return json.dumps(value, cls=self.encoder, ensure_ascii=False)
 
     def get_transform(self, name):
-        transform = super().get_transform(name)
-        if transform:
+        transform = super().get_transform(name)        if transform:
             return transform
         return KeyTransformFactory(name)
 
