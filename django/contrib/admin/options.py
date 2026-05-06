@@ -2049,6 +2049,11 @@ class InlineModelAdmin(BaseModelAdmin):
         can_add = self.has_add_permission(request, obj) if request else True
 
         class DeleteProtectedModelForm(base_model_form):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                if not can_change:
+                    for field in self.fields.values():
+                        field.disabled = True
 
             def hand_clean_DELETE(self):
                 """
@@ -2089,7 +2094,7 @@ class InlineModelAdmin(BaseModelAdmin):
 
             def has_changed(self):
                 # Protect against unauthorized edits.
-                if not can_change and not self.instance._state.adding:
+                if not can_change:
                     return False
                 if not can_add and self.instance._state.adding:
                     return False
