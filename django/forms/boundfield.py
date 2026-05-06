@@ -7,9 +7,8 @@ from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, format_html, html_safe
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-
+from django.core.exceptions import ValidationError
 __all__ = ('BoundField',)
-
 
 @html_safe
 class BoundField:
@@ -96,11 +95,25 @@ class BoundField:
             attrs=attrs,
             renderer=self.form.renderer,
         )
-
+    def did_change(self):
+        """
+        Determine if the field's data has changed from its initial value.
+        """
+        if not self.field.show_hidden_initial:
+            initial_value = self.initial
+        else:
+            initial_prefixed_name = self.form.add_initial_prefix(self.name)
+            hidden_widget = self.field.hidden_widget()
+            try:
+                initial_value = self.field.to_python(
+                    self.form._widget_data_value(hidden_widget, initial_prefixed_name)
+                )
+            except ValidationError:
+                return True  # Always assume data has changed if validation fails.
+        return self.field.has_changed(initial_value, self.value())
     def as_text(self, attrs=None, **kwargs):
         """
-        Return a string of HTML for representing this as an <input type="text">.
-        """
+        Return a string of HTML for representing this as an <input type="text">.        """
         return self.as_widget(TextInput(), attrs, **kwargs)
 
     def as_textarea(self, attrs=None, **kwargs):

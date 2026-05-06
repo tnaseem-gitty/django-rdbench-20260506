@@ -388,14 +388,14 @@ class BaseForm:
 
     def _clean_fields(self):
         for name, field in self.fields.items():
+            bound_field = self[name]
             if field.disabled:
                 value = self.get_initial_for_field(field, name)
             else:
-                value = self._field_data_value(field, self.add_prefix(name))
+                value = bound_field.value()
             try:
                 if isinstance(field, FileField):
-                    initial = self.get_initial_for_field(field, name)
-                    value = field.clean(value, initial)
+                    initial = self.get_initial_for_field(field, name)                    value = field.clean(value, initial)
                 else:
                     value = field.clean(value)
                 self.cleaned_data[name] = value
@@ -404,11 +404,9 @@ class BaseForm:
                     self.cleaned_data[name] = value
             except ValidationError as e:
                 self.add_error(name, e)
-
     def _clean_form(self):
         try:
-            cleaned_data = self.clean()
-        except ValidationError as e:
+            cleaned_data = self.clean()        except ValidationError as e:
             self.add_error(None, e)
         else:
             if cleaned_data is not None:
@@ -435,32 +433,12 @@ class BaseForm:
         return bool(self.changed_data)
 
     @cached_property
+    @cached_property
     def changed_data(self):
-        data = []
-        for name, field in self.fields.items():
-            data_value = self._field_data_value(field, self.add_prefix(name))
-            if not field.show_hidden_initial:
-                # Use the BoundField's initial as this is the value passed to
-                # the widget.
-                initial_value = self[name].initial
-            else:
-                initial_prefixed_name = self.add_initial_prefix(name)
-                hidden_widget = field.hidden_widget()
-                try:
-                    initial_value = field.to_python(
-                        self._widget_data_value(hidden_widget, initial_prefixed_name)
-                    )
-                except ValidationError:
-                    # Always assume data has changed if validation fails.
-                    data.append(name)
-                    continue
-            if field.has_changed(initial_value, data_value):
-                data.append(name)
-        return data
+        return [name for name, bf in self._bound_items() if bf.did_change()]
 
     @property
-    def media(self):
-        """Return all media required to render the widgets on this form."""
+    def media(self):        """Return all media required to render the widgets on this form."""
         media = Media()
         for field in self.fields.values():
             media = media + field.widget.media
