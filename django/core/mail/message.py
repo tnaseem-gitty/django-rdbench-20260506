@@ -257,11 +257,10 @@ class EmailMessage:
             msg['Date'] = formatdate(localtime=settings.EMAIL_USE_LOCALTIME)
         if 'message-id' not in header_names:
             # Use cached DNS_NAME for performance
-            msg['Message-ID'] = make_msgid(domain=DNS_NAME)
+            msg['Message-ID'] = make_msgid(domain=DNS_NAME.encode('idna').decode('ascii'))
         for name, value in self.extra_headers.items():
             if name.lower() != 'from':  # From is already handled
-                msg[name] = value
-        return msg
+                msg[name] = value        return msg
 
     def recipients(self):
         """

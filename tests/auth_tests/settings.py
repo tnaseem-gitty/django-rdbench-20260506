@@ -1,7 +1,7 @@
+SECRET_KEY = 'dummy_secret_key'
 import os
 
-AUTH_MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware',
+AUTH_MIDDLEWARE = [    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 ]
 
