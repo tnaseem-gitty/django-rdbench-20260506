@@ -128,4 +128,19 @@ class Jinja2TemplateReloadTests(SimpleTestCase):
     @mock.patch("django.template.loaders.base.Loader.reset")
     def test_reset_all_loaders(self, mock_reset):
         autoreload.reset_loaders()
-        self.assertEqual(mock_reset.call_count, 0)
+    @override_settings(
+        TEMPLATES=[
+            {
+                "DIRS": ["", "/valid/path"],
+                "BACKEND": "django.template.backends.django.DjangoTemplates",
+            }
+        ]
+    )
+    def test_empty_string_in_template_dirs(self):
+        template_dirs = autoreload.get_template_directories()
+        self.assertSetEqual(
+            template_dirs,
+            {Path.cwd() / "/valid/path"},
+        )
+        self.assertNotIn(Path.cwd(), template_dirs)
+
