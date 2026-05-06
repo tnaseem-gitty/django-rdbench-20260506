@@ -1,0 +1,30 @@
+Bug Report: makemigrations produces incorrect path for inner classes
+
+Description:
+When defining a subclass of django.db.models.Field as an inner class of another class, and using this field inside a django.db.models.Model class, the generated migrations file refers to the inner class as if it were a top-level class of the module it is in.
+
+Reproduction:
+class Outer(object):
+    class Inner(models.CharField):
+        pass
+class A(models.Model):
+    field = Outer.Inner(max_length=20)
+
+Current behavior:
+The generated migration file contains:
+('field', test_app.models.Inner(max_length=20))
+
+Expected behavior:
+The generated migration file should contain:
+('field', test_app.models.Outer.Inner(max_length=20))
+
+Proposed fix:
+Modify django/db/migrations/writer.py to correctly handle nested classes when generating import statements and references in migration files.
+
+Steps to fix:
+1. Locate the method responsible for generating import statements (likely in MigrationWriter class).
+2. Modify the logic to correctly handle nested classes.
+3. Update the tests to cover this scenario.
+4. Submit a pull request to the Django repository with these changes.
+
+Note: This issue is still present in Django 3.1.
