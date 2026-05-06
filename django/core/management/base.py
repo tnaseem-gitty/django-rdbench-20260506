@@ -289,11 +289,15 @@ class BaseCommand:
         self.add_arguments(parser)
         return parser
 
-    def add_arguments(self, parser):
-        """
-        Entry point for subclassed commands to add custom arguments.
-        """
-        pass
+def add_arguments(self, parser):
+    """
+    Entry point for subclassed commands to add custom arguments.
+    """
+    parser.add_argument(
+        '--skip-checks',
+        action='store_true',
+        help='Skip system checks.',
+    )
 
     def print_help(self, prog_name, subcommand):
         """
@@ -339,7 +343,7 @@ class BaseCommand:
                 # configured settings).
                 pass
 
-    def execute(self, *args, **options):
+        print("Executing command with options:", options)
         """
         Try to execute this command, performing system checks if needed (as
         controlled by the ``requires_system_checks`` attribute, except if
