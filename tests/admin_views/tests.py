@@ -5265,12 +5265,40 @@ class RawIdFieldsTest(TestCase):
         response2 = self.client.get(popup_url)
         self.assertNotContains(response2, "Kilbraken")
         self.assertContains(response2, "Palin")
+    def test_limit_choices_to_with_q_object(self):
+        """Test for duplicate options in form field when using Q object with join in limit_choices_to."""
+        from django.db import models
+        from django.db.models import Q
+        from django.contrib import admin
 
-    def test_list_display_method_same_name_as_reverse_accessor(self):
+        # Create test data
+        actor1 = Actor.objects.create(name="Actor 1", age=30)
+        actor2 = Actor.objects.create(name="Actor 2", age=40)
+        Inquisition.objects.create(expected=True, leader=actor1, country="Country 1")
+        Inquisition.objects.create(expected=True, leader=actor2, country="Country 2")
+
+        # Define limit_choices_to with Q object involving a join
+        limit_choices = Q(leader__age__gt=20) & Q(expected=True)
+
+        # Apply limit_choices_to to a ForeignKey field
+        class TestModel(models.Model):
+            inquisition = models.ForeignKey(Inquisition, limit_choices_to=limit_choices, on_delete=models.CASCADE)
+
+        # Register the model with the admin site
+        admin.site.register(TestModel)
+
+        # Access the admin form and check for duplicate options
+        response = self.client.get(reverse('admin:admin_views_testmodel_add'))
+        self.assertContains(response, "Country 1", count=1)
+        self.assertContains(response, "Country 2", count=1)
+        self.assertNotContains(response, "Country 1", count=2)
+        self.assertNotContains(response, "Country 2", count=2)
+
+        # Unregister the model after the test
+        admin.site.unregister(TestModel)
         """
         Should be able to use a ModelAdmin method in list_display that has the
-        same name as a reverse model field ("sketch" in this case).
-        """
+        same name as a reverse model field ("sketch" in this case).        """
         actor = Actor.objects.create(name="Palin", age=27)
         Inquisition.objects.create(expected=True, leader=actor, country="England")
         response = self.client.get(reverse('admin:admin_views_inquisition_changelist'))
