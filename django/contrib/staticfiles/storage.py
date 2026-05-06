@@ -226,21 +226,27 @@ class HashedFilesMixin:
             path for path in paths
             if matches_patterns(path, self._patterns)
         ]
+        # Track processed files to avoid duplicates
+        processed_files = set()
+        
         # Do a single pass first. Post-process all files once, then repeat for
         # adjustable files.
         for name, hashed_name, processed, _ in self._post_process(paths, adjustable_paths, hashed_files):
-            yield name, hashed_name, processed
+            if name not in processed_files:
+                yield name, hashed_name, processed
+                processed_files.add(name)
 
         paths = {path: paths[path] for path in adjustable_paths}
 
         for i in range(self.max_post_process_passes):
             substitutions = False
             for name, hashed_name, processed, subst in self._post_process(paths, adjustable_paths, hashed_files):
-                yield name, hashed_name, processed
+                if name not in processed_files:
+                    yield name, hashed_name, processed
+                    processed_files.add(name)
                 substitutions = substitutions or subst
 
-            if not substitutions:
-                break
+            if not substitutions:                break
 
         if substitutions:
             yield 'All', None, RuntimeError('Max post-process passes exceeded.')
