@@ -24,11 +24,10 @@ class RenameContentType(migrations.RunPython):
             content_type.model = new_model
             try:
                 with transaction.atomic(using=db):
-                    content_type.save(update_fields={'model'})
+                    content_type.save(using=db, update_fields={'model'})
             except IntegrityError:
                 # Gracefully fallback if a stale content type causes a
-                # conflict as remove_stale_contenttypes will take care of
-                # asking the user what should be done next.
+                # conflict as remove_stale_contenttypes will take care of                # asking the user what should be done next.
                 content_type.model = old_model
             else:
                 # Clear the cache as the `get_by_natual_key()` call will cache
