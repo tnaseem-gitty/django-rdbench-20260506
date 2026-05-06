@@ -226,17 +226,25 @@ class HashedFilesMixin:
             path for path in paths
             if matches_patterns(path, self._patterns)
         ]
+
+        # Set to keep track of yielded files
+        # This ensures each file is only yielded once, even if it's processed multiple times
+        yielded_files = set()
         # Do a single pass first. Post-process all files once, then repeat for
         # adjustable files.
         for name, hashed_name, processed, _ in self._post_process(paths, adjustable_paths, hashed_files):
-            yield name, hashed_name, processed
+            if name not in yielded_files:
+                yielded_files.add(name)
+                yield name, hashed_name, processed
 
         paths = {path: paths[path] for path in adjustable_paths}
 
         for i in range(self.max_post_process_passes):
             substitutions = False
             for name, hashed_name, processed, subst in self._post_process(paths, adjustable_paths, hashed_files):
-                yield name, hashed_name, processed
+                if name not in yielded_files:
+                    yielded_files.add(name)
+                    yield name, hashed_name, processed
                 substitutions = substitutions or subst
 
             if not substitutions:

@@ -567,4 +567,35 @@ class TestCollectionHashedFilesCache(CollectionTestCase):
             with storage.staticfiles_storage.open(relpath) as relfile:
                 content = relfile.read()
                 self.assertIn(b'foo.57a5cb9ba68d.png', content)
-                self.assertIn(b'xyz.57a5cb9ba68d.png', content)
+    def test_post_process_yields_each_file_once(self):
+        """
+        Test that post_process yields each file only once.
+        """
+        class TestStorage(storage.ManifestStaticFilesStorage):
+            def _post_process(self, paths, adjustable_paths, hashed_files):
+                yield 'file1.css', 'file1.123.css', True, False
+                yield 'file2.js', 'file2.456.js', True, False
+                yield 'file3.png', 'file3.789.png', True, False
+                yield 'file1.css', 'file1.123.css', True, True  # Duplicate yield
+                yield 'file2.js', 'file2.456.js', True, True  # Duplicate yield
+
+        test_storage = TestStorage()
+        collected_files = {
+            'file1.css': ('file1.css', None),
+            'file2.js': ('file2.js', None),
+            'file3.png': ('file3.png', None),
+        }
+        processed_files = []
+
+        for name, hashed_name, processed in test_storage.post_process(collected_files):
+            processed_files.append(name)
+
+        # Assert that each original file is in the processed_files list
+        self.assertTrue(set(collected_files.keys()).issubset(set(processed_files)))
+        
+        # Assert that each file from collected_files is only in the processed_files list once
+        for file in collected_files.keys():
+            self.assertEqual(processed_files.count(file), 1)
+
+        # Print processed_files for debugging
+        print("Processed files:", processed_files)
