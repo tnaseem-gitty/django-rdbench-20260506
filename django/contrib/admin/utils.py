@@ -379,6 +379,8 @@ def help_text_for_field(name, model):
 
 def display_for_field(value, field, empty_value_display):
     from django.contrib.admin.templatetags.admin_list import _boolean_icon
+    from django.db import models
+    import json
 
     if getattr(field, 'flatchoices', None):
         return dict(field.flatchoices).get(value, empty_value_display)
@@ -398,6 +400,11 @@ def display_for_field(value, field, empty_value_display):
         return formats.number_format(value)
     elif isinstance(field, models.FileField) and value:
         return format_html('<a href="{}">{}</a>', value.url, value)
+    elif isinstance(field, models.JSONField):
+        try:
+            return json.dumps(value)
+        except TypeError:
+            return 'Invalid JSON'
     else:
         return display_for_value(value, empty_value_display)
 
