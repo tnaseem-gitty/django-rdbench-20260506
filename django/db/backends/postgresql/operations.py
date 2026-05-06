@@ -44,7 +44,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DATE_TRUNC('%s', %s)" % (lookup_type, field_name)
 
     def _prepare_tzname_delta(self, tzname):
-        if '+' in tzname:
+        if tzname.startswith('Etc/GMT'):
+            # Convert 'Etc/GMT-10' to '+10' and 'Etc/GMT+10' to '-10'
+            offset = tzname.split('GMT', 1)[1]
+            return '+' + offset[1:] if offset.startswith('-') else '-' + offset[1:]
+        elif '+' in tzname:
             return tzname.replace('+', '-')
         elif '-' in tzname:
             return tzname.replace('-', '+')

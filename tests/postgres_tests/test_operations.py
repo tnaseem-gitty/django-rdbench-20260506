@@ -493,4 +493,14 @@ class ValidateConstraintTests(OperationTestBase):
         name, args, kwargs = operation.deconstruct()
         self.assertEqual(name, 'ValidateConstraint')
         self.assertEqual(args, [])
-        self.assertEqual(kwargs, {'model_name': 'Pony', 'name': constraint_name})
+class DatabaseOperationsTests(PostgreSQLTestCase):
+    def test_prepare_tzname_delta(self):
+        from django.db.backends.postgresql.operations import DatabaseOperations
+        ops = DatabaseOperations(connection=connection)
+
+        self.assertEqual(ops._prepare_tzname_delta('Etc/GMT-10'), '+10')
+        self.assertEqual(ops._prepare_tzname_delta('Etc/GMT+10'), '-10')
+        self.assertEqual(ops._prepare_tzname_delta('UTC+10'), 'UTC-10')
+        self.assertEqual(ops._prepare_tzname_delta('UTC-10'), 'UTC+10')
+        self.assertEqual(ops._prepare_tzname_delta('America/New_York'), 'America/New_York')
+

@@ -25,6 +25,10 @@ class TimezoneMixin:
                 tzname = timezone.get_current_timezone_name()
             else:
                 tzname = timezone._get_timezone_name(self.tzinfo)
+                if tzname.startswith('Etc/GMT'):
+                    # Convert 'Etc/GMT-10' to '+10' and 'Etc/GMT+10' to '-10'
+                    offset = tzname.split('GMT', 1)[1]
+                    tzname = '+' + offset[1:] if offset.startswith('-') else '-' + offset[1:]
         return tzname
 
 
