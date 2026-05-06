@@ -96,10 +96,11 @@ class Command(BaseCommand):
                     "or address:port pair." % options["addrport"]
                 )
             self.addr, _ipv4, _ipv6, _fqdn, self.port = m.groups()
+            if self.addr == "0":
+                self.addr = "0.0.0.0"
             if not self.port.isdigit():
                 raise CommandError("%r is not a valid port number." % self.port)
-            if self.addr:
-                if _ipv6:
+            if self.addr:                if _ipv6:
                     self.addr = self.addr[1:-1]
                     self.use_ipv6 = True
                     self._raw_ipv6 = True
