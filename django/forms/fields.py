@@ -998,6 +998,9 @@ class MultiValueField(Field):
                 # required validation will be handled by MultiValueField, not
                 # by those individual fields.
                 f.required = False
+            # Preserve the original required attribute when require_all_fields is False
+            elif not self.required:
+                f.required = f.required and self.required
         self.fields = fields
 
     def __deepcopy__(self, memo):
@@ -1035,17 +1038,14 @@ class MultiValueField(Field):
             except IndexError:
                 field_value = None
             if field_value in self.empty_values:
-                if self.require_all_fields:
-                    # Raise a 'required' error if the MultiValueField is
-                    # required and any field is empty.
+                if field.required:
+                    # Raise a 'required' error if the field is required, regardless of require_all_fields
+                    raise ValidationError(field.error_messages['required'], code='required')
+                elif self.require_all_fields:
                     if self.required:
                         raise ValidationError(self.error_messages['required'], code='required')
-                elif field.required:
-                    # Otherwise, add an 'incomplete' error to the list of
-                    # collected errors and skip field cleaning, if a required
-                    # field is empty.
-                    if field.error_messages['incomplete'] not in errors:
-                        errors.append(field.error_messages['incomplete'])
+                elif not self.required:
+                    # If the field is not required and require_all_fields is False, continue to the next field
                     continue
             try:
                 clean_data.append(field.clean(field_value))
@@ -1056,12 +1056,10 @@ class MultiValueField(Field):
                 errors.extend(m for m in e.error_list if m not in errors)
         if errors:
             raise ValidationError(errors)
-
         out = self.compress(clean_data)
         self.validate(out)
         self.run_validators(out)
         return out
-
     def compress(self, data_list):
         """
         Return a single value for the given list of values. The values can be
