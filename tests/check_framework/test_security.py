@@ -513,14 +513,13 @@ class CheckReferrerPolicyTest(SimpleTestCase):
 
     @override_settings(
         MIDDLEWARE=['django.middleware.security.SecurityMiddleware'],
-        SECURE_REFERRER_POLICY=None,
+        SECURE_REFERRER_POLICY="same-origin",
     )
     def test_no_referrer_policy(self):
-        self.assertEqual(self.func(None), [base.W022])
+        self.assertEqual(self.func(None), [])
 
     @override_settings(MIDDLEWARE=[], SECURE_REFERRER_POLICY=None)
-    def test_no_referrer_policy_no_middleware(self):
-        """
+    def test_no_referrer_policy_no_middleware(self):        """
         Don't warn if SECURE_REFERRER_POLICY is None and SecurityMiddleware
         isn't in MIDDLEWARE.
         """
