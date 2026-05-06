@@ -6,11 +6,10 @@ from html.parser import HTMLParser
 from urllib.parse import (
     parse_qsl, quote, unquote, urlencode, urlsplit, urlunsplit,
 )
-
+import html
 from django.utils.functional import Promise, keep_lazy, keep_lazy_text
 from django.utils.http import RFC3986_GENDELIMS, RFC3986_SUBDELIMS
-from django.utils.safestring import SafeData, SafeString, mark_safe
-from django.utils.text import normalize_newlines
+from django.utils.safestring import SafeData, SafeString, mark_safefrom django.utils.text import normalize_newlines
 
 # Configuration for urlize() function.
 TRAILING_PUNCTUATION_CHARS = '.,:;!'
@@ -43,11 +42,10 @@ def escape(text):
     This may result in double-escaping. If this is a concern, use
     conditional_escape() instead.
     """
-    return mark_safe(str(text).translate(_html_escapes))
+    return mark_safe(html.escape(str(text)))
 
 
-_js_escapes = {
-    ord('\\'): '\\u005C',
+_js_escapes = {    ord('\\'): '\\u005C',
     ord('\''): '\\u0027',
     ord('"'): '\\u0022',
     ord('>'): '\\u003E',
