@@ -172,6 +172,16 @@ class TestUtilsHtml(SimpleTestCase):
         for arg, expected in tests:
             with self.subTest(arg=arg):
                 self.assertEqual(json_script(arg, 'test_id'), expected)
+    def test_json_script_without_element_id(self):
+        """json_script without element_id should return a script tag without an id attribute."""
+        obj = {'a': 1, 'b': ['c', 'd']}
+        result = json_script(obj)
+        self.assertHTMLEqual(
+            result,
+            '<script type="application/json">'
+            '{"a": 1, "b": ["c", "d"]}'
+            '</script>'
+        )
 
     def test_smart_urlquote(self):
         items = (

@@ -1829,16 +1829,38 @@ If ``value`` is the list ``['a', 'b', 'c']``, the output will be the string
 ``json_script``
 ---------------
 
-Safely outputs a Python object as JSON, wrapped in a ``<script>`` tag, ready
-for use with JavaScript.
+Safely outputs a Python object as JSON, wrapped in a ``<script>`` tag, ready for
+use with JavaScript.
 
-**Argument:** HTML "id" of the ``<script>`` tag.
+The ``<script>`` tag is given an optional ``id`` attribute. If the ``id`` argument is
+not provided, the resulting ``<script>`` tag will not have an ``id`` attribute.
 
 For example::
 
     {{ value|json_script:"hello-data" }}
 
-If ``value`` is the dictionary ``{'hello': 'world'}``, the output will be:
+If ``value`` is the dictionary ``{'hello': 'world'}``, the output will be::
+
+    <script id="hello-data" type="application/json">{"hello": "world"}</script>
+
+If the ``id`` argument is omitted::
+
+    {{ value|json_script }}
+
+The output will be::
+
+    <script type="application/json">{"hello": "world"}</script>
+
+The resulting JavaScript object can be accessed using the given id::
+
+    <script>
+    const data = JSON.parse(document.getElementById('hello-data').textContent);
+    console.log(data.hello);
+    </script>
+
+If the ``id`` is omitted, you can access the JSON directly from the ``<script>`` tag's content.
+
+XSS attacks are mitigated by escaping the ``<``, ``>``, ``&`` and ``'`` characters.
 
 .. code-block:: html
 
