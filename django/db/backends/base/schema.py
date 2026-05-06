@@ -568,21 +568,23 @@ class BaseDatabaseSchemaEditor:
             exclude=meta_constraint_names | meta_index_names,
             **constraint_kwargs,
         )
+        # Filter out primary key constraints
+        constraint_names = [
+            name for name in constraint_names
+            if not self._is_primary_key_constraint(model, name)
+        ]
         if len(constraint_names) != 1:
             raise ValueError(
-                "Found wrong number (%s) of constraints for %s(%s)"
-                % (
+                "Found wrong number (%s) of constraints for %s(%s)"                % (
                     len(constraint_names),
                     model._meta.db_table,
                     ", ".join(columns),
                 )
             )
         self.execute(self._delete_constraint_sql(sql, model, constraint_names[0]))
-
     def alter_db_table(self, model, old_db_table, new_db_table):
         """Rename the table a model points to."""
-        if old_db_table == new_db_table or (
-            self.connection.features.ignores_table_name_case
+        if old_db_table == new_db_table or (            self.connection.features.ignores_table_name_case
             and old_db_table.lower() == new_db_table.lower()
         ):
             return
