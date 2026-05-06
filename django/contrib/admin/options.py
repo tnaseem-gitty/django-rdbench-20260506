@@ -1911,6 +1911,7 @@ class ModelAdmin(BaseModelAdmin):
         return queryset.filter(pk__in=object_pks)
 
     @csrf_protect_m
+    @transaction.atomic
     def changelist_view(self, request, extra_context=None):
         """
         The 'change list' admin view for this model.
