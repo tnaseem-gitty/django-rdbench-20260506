@@ -62,11 +62,14 @@ class UsernameField(forms.CharField):
         return unicodedata.normalize('NFKC', super().to_python(value))
 
     def widget_attrs(self, widget):
-        return {
-            **super().widget_attrs(widget),
+        attrs = super().widget_attrs(widget)
+        attrs.update({
             'autocapitalize': 'none',
             'autocomplete': 'username',
-        }
+        })
+        if self.max_length is not None:
+            attrs['maxlength'] = str(self.max_length)
+        return attrs
 
 
 class UserCreationForm(forms.ModelForm):
@@ -165,7 +168,11 @@ class AuthenticationForm(forms.Form):
     Base class for authenticating users. Extend this to get a form that accepts
     username/password logins.
     """
-    username = UsernameField(widget=forms.TextInput(attrs={'autofocus': True}))
+    # Set max_length on username field to ensure maxlength HTML attribute is set
+    username = UsernameField(
+        widget=forms.TextInput(attrs={'autofocus': True}),
+        max_length=UserModel._meta.get_field(UserModel.USERNAME_FIELD).max_length or 254
+    )
     password = forms.CharField(
         label=_("Password"),
         strip=False,
@@ -191,7 +198,6 @@ class AuthenticationForm(forms.Form):
 
         # Set the max length and label for the "username" field.
         self.username_field = UserModel._meta.get_field(UserModel.USERNAME_FIELD)
-        self.fields['username'].max_length = self.username_field.max_length or 254
         if self.fields['username'].label is None:
             self.fields['username'].label = capfirst(self.username_field.verbose_name)
 
