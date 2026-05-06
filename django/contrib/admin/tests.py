@@ -182,3 +182,62 @@ class AdminSeleniumTestCase(SeleniumTestCase, StaticLiveServerTestCase):
         """
         return (self.selenium.find_element_by_css_selector(selector)
                 .get_attribute('class').find(klass) != -1)
+from django.db import models
+
+class MyModel(models.Model):
+    some_condition = models.BooleanField(default=False)
+
+from django.contrib import admin
+from django.test import RequestFactory, TestCase
+
+class MyInline(admin.TabularInline):
+    model = MyModel
+
+class MyModelAdmin(admin.ModelAdmin):
+    def get_inlines(self, request, obj=None):
+        if obj and obj.some_condition:
+            return [MyInline]
+        return []
+
+class MyModelAdminTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.admin = MyModelAdmin(MyModel, admin.site)
+
+    def test_get_inlines_with_obj(self):
+        request = self.factory.get('/')
+        obj = MyModel(some_condition=True)
+        inlines = self.admin.get_inlines(request, obj)
+        self.assertEqual(inlines, [MyInline])
+
+    def test_get_inlines_without_obj(self):
+        request = self.factory.get('/')
+        inlines = self.admin.get_inlines(request)
+        self.assertEqual(inlines, [])
+from django.test import RequestFactory, TestCase
+from .models import MyModel
+
+class MyInline(admin.TabularInline):
+    model = MyModel
+
+class MyModelAdmin(admin.ModelAdmin):
+    def get_inlines(self, request, obj=None):
+        if obj and obj.some_condition:
+            return [MyInline]
+        return []
+
+class MyModelAdminTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.admin = MyModelAdmin(MyModel, admin.site)
+
+    def test_get_inlines_with_obj(self):
+        request = self.factory.get('/')
+        obj = MyModel(some_condition=True)
+        inlines = self.admin.get_inlines(request, obj)
+        self.assertEqual(inlines, [MyInline])
+
+    def test_get_inlines_without_obj(self):
+        request = self.factory.get('/')
+        inlines = self.admin.get_inlines(request)
+        self.assertEqual(inlines, [])
