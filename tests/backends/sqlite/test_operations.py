@@ -4,11 +4,10 @@ from django.core.management.color import no_style
 from django.db import connection
 from django.test import TestCase
 
-from ..models import Person, Tag
+from tests.models import Person, Tag
 
 
-@unittest.skipUnless(connection.vendor == 'sqlite', 'SQLite tests.')
-class SQLiteOperationsTests(TestCase):
+@unittest.skipUnless(connection.vendor == 'sqlite', 'SQLite tests.')class SQLiteOperationsTests(TestCase):
     def test_sql_flush(self):
         self.assertEqual(
             connection.ops.sql_flush(

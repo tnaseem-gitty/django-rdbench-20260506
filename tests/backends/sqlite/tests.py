@@ -16,11 +16,10 @@ from django.test import (
 )
 from django.test.utils import isolate_apps
 
-from ..models import Author, Item, Object, Square
+from tests.models import Author, Item, Object, Square
 
 try:
-    from django.db.backends.sqlite3.base import check_sqlite_version
-except ImproperlyConfigured:
+    from django.db.backends.sqlite3.base import check_sqlite_versionexcept ImproperlyConfigured:
     # Ignore "SQLite is too old" when running tests on another database.
     pass
 
@@ -29,16 +28,15 @@ except ImproperlyConfigured:
 class Tests(TestCase):
     longMessage = True
 
-    def test_check_sqlite_version(self):
-        msg = 'SQLite 3.8.3 or later is required (found 3.8.2).'
-        with mock.patch.object(dbapi2, 'sqlite_version_info', (3, 8, 2)), \
-                mock.patch.object(dbapi2, 'sqlite_version', '3.8.2'), \
-                self.assertRaisesMessage(ImproperlyConfigured, msg):
-            check_sqlite_version()
+def test_check_sqlite_version(self):
+    msg = 'SQLite 3.9.0 or later is required (found 3.8.9).'
+    with mock.patch.object(dbapi2, 'sqlite_version_info', (3, 8, 9)), \
+            mock.patch.object(dbapi2, 'sqlite_version', '3.8.9'), \
+            self.assertRaisesMessage(ImproperlyConfigured, msg):
+        check_sqlite_version()
 
     def test_aggregation(self):
-        """Raise NotSupportedError when aggregating on date/time fields."""
-        for aggregate in (Sum, Avg, Variance, StdDev):
+        """Raise NotSupportedError when aggregating on date/time fields."""        for aggregate in (Sum, Avg, Variance, StdDev):
             with self.assertRaises(NotSupportedError):
                 Item.objects.all().aggregate(aggregate('time'))
             with self.assertRaises(NotSupportedError):
