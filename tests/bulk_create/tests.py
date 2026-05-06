@@ -1,8 +1,119 @@
 from operator import attrgetter
+from unittest import mock
 
 from django.db import IntegrityError, NotSupportedError, connection
 from django.db.models import FileField, Value
 from django.db.models.functions import Lower
+from django.test import (
+    TestCase, override_settings, skipIfDBFeature, skipUnlessDBFeature,
+)
+
+from .models import (
+    Country, NoFields, NullableFields, Pizzeria, ProxyCountry,
+    ProxyMultiCountry, ProxyMultiProxyCountry, ProxyProxyCountry, Restaurant,
+    State, TwoFields,
+)
+
+class BulkCreateTests(TestCase):
+    def setUp(self):
+        self.data = [
+            Country(name="United States of America", iso_two_letter="US"),
+            Country(name="The Netherlands", iso_two_letter="NL"),
+            Country(name="Germany", iso_two_letter="DE"),
+            Country(name="Czech Republic", iso_two_letter="CZ")
+        ]
+
+    def test_simple(self):
+        created = Country.objects.bulk_create(self.data)
+        self.assertEqual(len(created), 4)
+        self.assertQuerysetEqual(Country.objects.order_by("-name"), [
+            "United States of America", "The Netherlands", "Germany", "Czech Republic"
+        ], attrgetter("name"))
+
+        created = Country.objects.bulk_create([])
+        self.assertEqual(created, [])
+        self.assertEqual(Country.objects.count(), 4)
+
+    @skipUnlessDBFeature('has_bulk_insert')
+    def test_efficiency(self):
+        with self.assertNumQueries(1):
+            Country.objects.bulk_create(self.data)
+
+    @skipUnlessDBFeature('has_bulk_insert')
+    def test_long_non_ascii_text(self):
+        """
+        Inserting non-ASCII values with a length in the range 2001 to 4000
+        characters, i.e. 4002 to 8000 bytes, must be set as a CLOB on Oracle
+        (#22144).
+        """
+        Country.objects.bulk_create([Country(description='Ж' * 3000)])
+        self.assertEqual(Country.objects.count(), 1)
+
+    @skipUnlessDBFeature('has_bulk_insert')
+    def test_long_and_short_text(self):
+        Country.objects.bulk_create([
+            Country(description='a' * 4001),
+            Country(description='a'),
+            Country(description='Ж' * 2001),
+            Country(description='Ж'),
+        ])
+        self.assertEqual(Country.objects.count(), 4)
+
+    def test_multi_table_inheritance_unsupported(self):
+        expected_message = "Can't bulk create a multi-table inherited model"
+        with self.assertRaisesMessage(ValueError, expected_message):
+            Pizzeria.objects.bulk_create([
+                Pizzeria(name="The Art of Pizza"),
+            ])
+        with self.assertRaisesMessage(ValueError, expected_message):
+            ProxyMultiCountry.objects.bulk_create([
+                ProxyMultiCountry(name="Fillory", iso_two_letter="FL"),
+            ])
+        with self.assertRaisesMessage(ValueError, expected_message):
+            ProxyMultiProxyCountry.objects.bulk_create([
+                ProxyMultiProxyCountry(name="Fillory", iso_two_letter="FL"),
+            ])
+
+    def test_proxy_inheritance_supported(self):
+        ProxyCountry.objects.bulk_create([
+            ProxyCountry(name="Qwghlm", iso_two_letter="QW"),
+            Country(name="Tortall", iso_two_letter="TA"),
+        ])
+        self.assertQuerysetEqual(ProxyCountry.objects.all(), {
+            "Qwghlm", "Tortall"
+        }, attrgetter("name"), ordered=False)
+
+        ProxyProxyCountry.objects.bulk_create([
+            ProxyProxyCountry(name="Netherlands", iso_two_letter="NT"),
+        ])
+        self.assertQuerysetEqual(ProxyProxyCountry.objects.all(), {
+            "Qwghlm", "Tortall", "Netherlands",
+        }, attrgetter("name"), ordered=False)
+
+    def test_non_auto_increment_pk(self):
+        State.objects.bulk_create([
+            State(two_letter_code=s)
+            for s in ["IL", "NY", "CA", "ME"]
+        ])
+        self.assertQuerysetEqual(State.objects.order_by("two_letter_code"), [
+            "CA", "IL", "ME", "NY",
+        ], attrgetter("two_letter_code"))
+
+    def test_batch_size_compatibility(self):
+        # Create a large number of Country objects
+        large_data = [Country(name=f"Country {i}", iso_two_letter=f"CT{i}") for i in range(1000)]
+        
+        # Mock the bulk_batch_size method to return a smaller batch size
+        with mock.patch('django.db.backends.base.operations.BaseDatabaseOperations.bulk_batch_size', return_value=100) as mock_bulk_batch_size:
+            # Use a larger batch_size to ensure the minimum is taken
+            Country.objects.bulk_create(large_data, batch_size=200)
+            mock_bulk_batch_size.assert_called_once()
+        
+        # Ensure all objects are created
+        self.assertEqual(Country.objects.count(), 1000)
+
+from django.db import IntegrityError, NotSupportedError, connection
+from django.db.models import FileField, Valuefrom django.db.models.functions import Lower
 from django.test import (
     TestCase, override_settings, skipIfDBFeature, skipUnlessDBFeature,
 )

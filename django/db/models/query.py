@@ -1209,11 +1209,10 @@ class QuerySet:
         if ignore_conflicts and not connections[self.db].features.supports_ignore_conflicts:
             raise NotSupportedError('This database backend does not support ignoring conflicts.')
         ops = connections[self.db].ops
-        batch_size = (batch_size or max(ops.bulk_batch_size(fields, objs), 1))
+        batch_size = min(batch_size, ops.bulk_batch_size(fields, objs)) if batch_size else ops.bulk_batch_size(fields, objs)
         inserted_rows = []
         bulk_return = connections[self.db].features.can_return_rows_from_bulk_insert
-        for item in [objs[i:i + batch_size] for i in range(0, len(objs), batch_size)]:
-            if bulk_return and not ignore_conflicts:
+        for item in [objs[i:i + batch_size] for i in range(0, len(objs), batch_size)]:            if bulk_return and not ignore_conflicts:
                 inserted_columns = self._insert(
                     item, fields=fields, using=self.db,
                     returning_fields=self.model._meta.db_returning_fields,
