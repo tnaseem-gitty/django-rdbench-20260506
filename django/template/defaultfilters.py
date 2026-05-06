@@ -151,8 +151,11 @@ def floatformat(text, arg=-1):
             use_l10n = False
             arg = arg[:-1] or -1
     try:
-        input_val = repr(text)
-        d = Decimal(input_val)
+        if isinstance(text, Decimal):
+            d = text
+        else:
+            input_val = repr(text)
+            d = Decimal(input_val)
     except InvalidOperation:
         try:
             d = Decimal(str(float(text)))
