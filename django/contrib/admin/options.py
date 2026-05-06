@@ -1910,10 +1910,10 @@ class ModelAdmin(BaseModelAdmin):
             return queryset
         return queryset.filter(pk__in=object_pks)
 
+    @transaction.atomic
     @csrf_protect_m
     def changelist_view(self, request, extra_context=None):
-        """
-        The 'change list' admin view for this model.
+        """        The 'change list' admin view for this model.
         """
         from django.contrib.admin.views.main import ERROR_FLAG
 
