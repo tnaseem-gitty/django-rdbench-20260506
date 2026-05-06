@@ -169,21 +169,28 @@ def parse_http_date(date):
     # our own RFC-compliant parsing.
     for regex in RFC1123_DATE, RFC850_DATE, ASCTIME_DATE:
         m = regex.match(date)
+        # m = regex.match(date)
+        # print(f"Trying regex: {regex.pattern}, Match: {m is not None}")
         if m is not None:
             break
-    else:
-        raise ValueError("%r is not in a valid HTTP date format" % date)
+    else:        raise ValueError("%r is not in a valid HTTP date format" % date)
     try:
         year = int(m.group('year'))
         if year < 100:
-            if year < 70:
-                year += 2000
+            current_year = datetime.datetime.now().year
+            current_century = current_year // 100 * 100
+            # print(f"Year: {year}, Current Year: {current_year}, Current Century: {current_century}")
+            if year > (current_year % 100) + 50:
+                year += current_century - 100
+            elif year > (current_year % 100):
+                year += current_century - 100
             else:
-                year += 1900
+                year += current_century
+            # print(f"Adjusted Year: {year}")
+            print(f"Adjusted Year: {year}")
         month = MONTHS.index(m.group('mon').lower()) + 1
         day = int(m.group('day'))
-        hour = int(m.group('hour'))
-        min = int(m.group('min'))
+        hour = int(m.group('hour'))        min = int(m.group('min'))
         sec = int(m.group('sec'))
         result = datetime.datetime(year, month, day, hour, min, sec)
         return calendar.timegm(result.utctimetuple())
