@@ -26,12 +26,10 @@ class AutocompleteJsonView(BaseListView):
         context = self.get_context_data()
         return JsonResponse({
             'results': [
-                {'id': str(getattr(obj, to_field_name)), 'text': str(obj)}
-                for obj in context['object_list']
+                self.serialize_result(obj, to_field_name) for obj in context['object_list']
             ],
             'pagination': {'more': context['page_obj'].has_next()},
         })
-
     def get_paginator(self, *args, **kwargs):
         """Use the ModelAdmin's paginator."""
         return self.model_admin.get_paginator(self.request, *args, **kwargs)
@@ -97,6 +95,5 @@ class AutocompleteJsonView(BaseListView):
 
         return term, model_admin, source_field, to_field_name
 
-    def has_perm(self, request, obj=None):
-        """Check if user has permission to access the related model."""
-        return self.model_admin.has_view_permission(request, obj=obj)
+    def serialize_result(self, obj, to_field_name):
+        return {'id': str(getattr(obj, to_field_name)), 'text': str(obj)}
