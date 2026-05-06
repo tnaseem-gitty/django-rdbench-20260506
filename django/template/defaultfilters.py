@@ -81,11 +81,15 @@ def escapejs_filter(value):
     """Hex encode characters for use in JavaScript strings."""
     return escapejs(value)
 
-
+@register.filter(is_safe=True)
+def escapeseq(value):
+    """
+    Escape each item in a sequence.
+    """
+    return [escape(item) for item in value]
 @register.filter(is_safe=True)
 def json_script(value, element_id=None):
-    """
-    Output value JSON-encoded, wrapped in a <script type="application/json">
+    """    Output value JSON-encoded, wrapped in a <script type="application/json">
     tag (with an optional id).
     """
     return _json_script(value, element_id)
