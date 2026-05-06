@@ -22,6 +22,10 @@ class MigrationExecutor:
     def migration_plan(self, targets, clean_start=False):
         """
         Given a set of targets, return a list of (Migration instance, backwards?).
+        
+        This method now handles squashed migrations by checking if any of the
+        replaced migrations are still applied. If not, the squashed migration
+        is included in the plan.
         """
         plan = []
         if clean_start:
@@ -52,13 +56,34 @@ class MigrationExecutor:
                 for node in next_in_app:
                     for migration in self.loader.graph.backwards_plan(node):
                         if migration in applied:
-                            plan.append((self.loader.graph.nodes[migration], True))
-                            applied.pop(migration)
+                            # Check if this is a squashed migration
+                            mig_obj = self.loader.graph.nodes[migration]
+                            if mig_obj.replaces:
+                                # Check if any of the replaced migrations are still applied
+                                replaced_applied = any(
+                                    replaced in applied for replaced in mig_obj.replaces
+                                )
+                                if not replaced_applied:
+                                    plan.append((mig_obj, True))
+                                    applied.pop(migration)
+                            else:
+                                plan.append((mig_obj, True))
+                                applied.pop(migration)
             else:
                 for migration in self.loader.graph.forwards_plan(target):
                     if migration not in applied:
-                        plan.append((self.loader.graph.nodes[migration], False))
-                        applied[migration] = self.loader.graph.nodes[migration]
+                        mig_obj = self.loader.graph.nodes[migration]
+                        if mig_obj.replaces:
+                            # Check if any of the replaced migrations are still applied
+                            replaced_applied = any(
+                                replaced in applied for replaced in mig_obj.replaces
+                            )
+                            if not replaced_applied:
+                                plan.append((mig_obj, False))
+                                applied[migration] = mig_obj
+                        else:
+                            plan.append((mig_obj, False))
+                            applied[migration] = mig_obj
         return plan
 
     def _create_project_state(self, with_applied_migrations=False):

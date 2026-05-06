@@ -13,6 +13,8 @@ from django.test import (
 
 from .test_base import MigrationTestBase
 
+# Added comment to force file update
+
 
 @modify_settings(INSTALLED_APPS={'append': 'migrations2'})
 class ExecutorTests(MigrationTestBase):
@@ -99,7 +101,44 @@ class ExecutorTests(MigrationTestBase):
                 (executor.loader.graph.nodes["migrations", "0001_squashed_0002"], True),
             ],
         )
-        executor.migrate([("migrations", None)])
+    def test_squashed_migration_plan_with_replaced_migrations(self):
+        """
+        Tests that the migration plan properly handles squashed migrations
+        when some or all of the replaced migrations are still present.
+        """
+        executor = MigrationExecutor(connection)
+        
+        # Create a mock squashed migration
+        squashed_migration = mock.MagicMock()
+        squashed_migration.replaces = [('migrations', '0001_initial'), ('migrations', '0002_second')]
+        squashed_migration.name = '0001_squashed_0002'
+        squashed_migration.app_label = 'migrations'
+        
+        # Add the squashed migration to the graph
+        executor.loader.graph.add_node(('migrations', '0001_squashed_0002'), squashed_migration)
+        
+        # Case 1: No replaced migrations are applied
+        executor.loader.applied_migrations = {}
+        
+        plan = executor.migration_plan([('migrations', '0001_squashed_0002')])
+        self.assertEqual(plan, [(squashed_migration, False)])
+        
+        # Case 2: Some replaced migrations are applied
+        executor.loader.applied_migrations = {
+            ('migrations', '0001_initial'): mock.MagicMock(),
+        }
+        
+        plan = executor.migration_plan([('migrations', '0001_squashed_0002')])
+        self.assertEqual(plan, [])
+        
+        # Case 3: All replaced migrations are applied
+        executor.loader.applied_migrations = {
+            ('migrations', '0001_initial'): mock.MagicMock(),
+            ('migrations', '0002_second'): mock.MagicMock(),
+        }
+        
+        plan = executor.migration_plan([('migrations', '0001_squashed_0002')])
+        self.assertEqual(plan, [])
         # Are the tables gone?
         self.assertTableNotExists("migrations_author")
         self.assertTableNotExists("migrations_book")
@@ -850,5 +889,41 @@ class ExecutorUnitTests(SimpleTestCase):
         })
 
         plan = executor.migration_plan({a1})
-
+    # Test for squashed migration plan with replaced migrations
+    def test_squashed_migration_plan_with_replaced_migrations(self):
+        """
+        Tests that the migration plan properly handles squashed migrations
+        when the replaced migrations are still present.
+        """
+        executor = MigrationExecutor(connection)
+        
+        # Create a mock squashed migration
+        squashed_migration = mock.MagicMock()
+        squashed_migration.replaces = [('migrations', '0001_initial'), ('migrations', '0002_second')]
+        squashed_migration.name = '0001_squashed_0002'
+        squashed_migration.app_label = 'migrations'
+        
+        # Add the squashed migration to the graph
+        executor.loader.graph.add_node(('migrations', '0001_squashed_0002'), squashed_migration)
+        
+        # Mock the applied migrations
+        executor.loader.applied_migrations = {
+            ('migrations', '0001_initial'): squashed_migration,
+            ('migrations', '0002_second'): squashed_migration,
+        }
+        
+        # Generate the migration plan
+        plan = executor.migration_plan([('migrations', '0001_squashed_0002')])
+        
+        # The plan should be empty because all replaced migrations are applied
         self.assertEqual(plan, [])
+        
+        # Now, let's remove one of the replaced migrations from applied_migrations
+        del executor.loader.applied_migrations[('migrations', '0002_second')]
+        
+        # Generate the migration plan again
+        plan = executor.migration_plan([('migrations', '0001_squashed_0002')])
+        
+        # Now the plan should include the squashed migration
+        self.assertEqual(plan, [(squashed_migration, False)])
+
