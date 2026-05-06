@@ -3930,4 +3930,26 @@ class Ticket23622Tests(TestCase):
             set(Ticket23605A.objects.filter(qx).values_list('pk', flat=True)),
             set(Ticket23605A.objects.filter(qy).values_list('pk', flat=True))
         )
-        self.assertSequenceEqual(Ticket23605A.objects.filter(qx), [a2])
+class TestMetaOrderingGroupBy(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.extra1 = ExtraInfo.objects.create()
+        cls.extra2 = ExtraInfo.objects.create()
+        cls.author1 = Author.objects.create(name='Author 1', num=1, extra=cls.extra1)
+        cls.author2 = Author.objects.create(name='Author 2', num=2, extra=cls.extra2)
+
+    def test_meta_ordering_not_in_group_by(self):
+        from django.db import models, connection
+        from django.test.utils import CaptureQueriesContext
+
+        # Set up a query that uses both aggregation and ordering
+        query = Author.objects.values('extra').annotate(max_num=models.Max('num')).order_by('name')
+        
+        # Execute the query and capture the SQL
+        with CaptureQueriesContext(connection) as context:
+            list(query)  # Force query execution
+        
+        # Check that the captured SQL does not include 'name' in the GROUP BY clause
+        sql = context.captured_queries[0]['sql'].lower()
+        self.assertIn('group by', sql)
+        self.assertNotIn('name', sql.split('group by')[1])

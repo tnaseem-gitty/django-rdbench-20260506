@@ -2028,13 +2028,31 @@ class Query(BaseExpression):
                     })
                     seen_models.add(model)
 
-        group_by = list(self.select)
+        group_by = []
+        ordering_fields = set(self.order_by)
+        ordering_aliases = set(item.split('.')[-1].strip('"') for item in ordering_fields if '.' in item)
+        ordering_full_cols = set(item.replace('"', '') for item in ordering_fields)
+        for item in self.select:
+            if isinstance(item, str):
+                column = item.split('.')[-1].strip('"')
+                full_col = item.replace('"', '')
+                if (column not in ordering_aliases and 
+                    item not in ordering_fields and 
+                    full_col not in ordering_full_cols and
+                    not any(full_col.endswith(f'.{field}') for field in ordering_aliases) and
+                    not any(item.endswith(f'"{field}"') for field in ordering_aliases) and
+                    not any(f'"{field}"' in item for field in ordering_aliases) and
+                    not any(item.endswith(f'.{field}') for field in ordering_aliases) and
+                    not any(f'.{field}' in item for field in ordering_aliases)):
+                    group_by.append(item)
+            else:
+                group_by.append(item)
         if self.annotation_select:
             for alias, annotation in self.annotation_select.items():
                 if not allow_aliases or alias in column_names:
                     alias = None
                 group_by_cols = annotation.get_group_by_cols(alias=alias)
-                group_by.extend(group_by_cols)
+                group_by.extend(col for col in group_by_cols if col not in ordering_fields)
         self.group_by = tuple(group_by)
 
     def add_select_related(self, fields):
