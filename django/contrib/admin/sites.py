@@ -418,16 +418,35 @@ class AdminSite:
 
     @no_append_slash
     def catch_all_view(self, request, url):
-        if settings.APPEND_SLASH and not url.endswith('/'):
-            urlconf = getattr(request, 'urlconf', None)
-            path = '%s/' % request.path_info
-            try:
-                match = resolve(path, urlconf)
-            except Resolver404:
-                pass
-            else:
-                if getattr(match.func, 'should_append_slash', True):
-                    return HttpResponsePermanentRedirect(path)
+        print(f"catch_all_view called with url: {url}")
+        print(f"request.path: {request.path}")
+        print(f"request.path_info: {request.path_info}")
+        print(f"FORCE_SCRIPT_NAME: {settings.FORCE_SCRIPT_NAME}")
+        
+        if settings.FORCE_SCRIPT_NAME:
+            path = request.path_info
+        else:
+            path = request.path
+        
+        urlconf = getattr(request, 'urlconf', None)
+        try:
+            match = resolve(path, urlconf)
+            print(f"URL resolved to: {match.func}")
+            return match.func(request)
+        except Resolver404:
+            if settings.APPEND_SLASH and not path.endswith('/'):
+                try:
+                    match = resolve(path + '/', urlconf)
+                    print(f"URL resolved to: {match.func}")
+                    if getattr(match.func, 'should_append_slash', True):
+                        redirect_url = request.path + '/'
+                        if settings.FORCE_SCRIPT_NAME and not redirect_url.startswith(settings.FORCE_SCRIPT_NAME):
+                            redirect_url = settings.FORCE_SCRIPT_NAME + redirect_url
+                        print(f"Redirecting to: {redirect_url}")
+                        return HttpResponseRedirect(redirect_url)
+                except Resolver404:
+                    pass
+        print("Raising Http404")
         raise Http404
 
     def _build_app_dict(self, request, label=None):
