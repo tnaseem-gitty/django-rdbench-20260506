@@ -51,11 +51,13 @@ class Command(BaseCommand):
             '--noreload', action='store_false', dest='use_reloader',
             help='Tells Django to NOT use the auto-reloader.',
         )
-
+        parser.add_argument(
+            '--skip-checks', action='store_true', dest='skip_checks',
+            help='Tells Django to skip system checks.',
+        )
     def execute(self, *args, **options):
         if options['no_color']:
-            # We rely on the environment because it's currently the only
-            # way to reach WSGIRequestHandler. This seems an acceptable
+            # We rely on the environment because it's currently the only            # way to reach WSGIRequestHandler. This seems an acceptable
             # compromise considering `runserver` runs indefinitely.
             os.environ["DJANGO_COLORS"] = "nocolor"
         super().execute(*args, **options)
@@ -64,10 +66,10 @@ class Command(BaseCommand):
         """Return the default WSGI handler for the runner."""
         return get_internal_wsgi_application()
 
-    def handle(self, *args, **options):
+        if options['skip_checks']:
+            self.requires_system_checks = False
         if not settings.DEBUG and not settings.ALLOWED_HOSTS:
             raise CommandError('You must set settings.ALLOWED_HOSTS if DEBUG is False.')
-
         self.use_ipv6 = options['use_ipv6']
         if self.use_ipv6 and not socket.has_ipv6:
             raise CommandError('Your Python does not support IPv6.')
