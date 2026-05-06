@@ -1,0 +1,60 @@
+======================
+Django 2.0 release notes
+======================
+
+*Expected release date: TBA*
+
+Welcome to Django 2.0!
+
+These release notes cover the new features, as well as some backwards
+incompatible changes you'll want to be aware of when upgrading from
+Django 1.11 or earlier. We've dropped some features that have reached
+the end of their deprecation cycle, and we've begun the deprecation
+process for some features.
+
+See the `Upgrading Django to a newer version` guide if you're updating
+an existing project.
+
+Python compatibility
+====================
+
+Django 2.0 supports Python 3.5+.
+
+What's new in Django 2.0
+========================
+
+Minor features
+--------------
+
+:mod:`django.db.migrations`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Fixed a bug in ``makemigrations`` where ``allow_migrate()`` was being called
+  with invalid ``(app_label, model)`` pairs, potentially causing errors with
+  custom routers. The command now correctly calls ``allow_migrate()`` only
+  for models within their respective apps.
+
+Backwards incompatible changes in 2.0
+=====================================
+
+Database backend API
+--------------------
+
+* ...
+
+Features deprecated in 2.0
+==========================
+
+Miscellaneous
+-------------
+
+* ...
+
+Features removed in 2.0
+=======================
+
+These features have reached the end of their deprecation cycle and are removed
+in Django 2.0.
+
+* ...
+

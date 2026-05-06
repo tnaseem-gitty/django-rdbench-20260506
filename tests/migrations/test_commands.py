@@ -1082,7 +1082,8 @@ class MakeMigrationsTests(MigrationTestBase):
                 val
             )
 
-    def test_makemigrations_with_custom_name(self):
+        self.assertTrue(os.path.exists(os.path.join(migration_dir, '0001_initial.py')))
+
         """
         Makes sure that makemigrations generate a custom migration.
         """
@@ -1201,6 +1202,43 @@ class MakeMigrationsTests(MigrationTestBase):
             self.assertIn("You can accept the default 'timezone.now' by pressing 'Enter'", prompt_output)
             self.assertIn("Add field creation_date to entry", output)
 
+    def test_makemigrations_allow_migrate_model_check(self):
+        """
+        Test that makemigrations only checks allow_migrate() for models within their respective app.
+        """
+        out = six.StringIO()
+        migration_dir = None
+        dir_contents = None
+        with self.temporary_migration_module() as temp_dir:
+            migration_dir = temp_dir
+            # Ensure the migrations directory exists
+            os.makedirs(migration_dir, exist_ok=True)
+            
+            # Add a new model to trigger a migration
+            with open(os.path.join(migration_dir, 'models.py'), 'w') as f:
+                f.write("""
+from django.db import models
+
+class TestModel(models.Model):
+    name = models.CharField(max_length=100)
+""")
+
+            with mock.patch('django.db.migrations.questioner.input', return_value='y'):
+                call_command('makemigrations', 'migrations', stdout=out)
+
+            # Capture directory contents before the context manager exits
+            dir_contents = os.listdir(migration_dir)
+
+        # Print debug information
+        print("Migration directory:", migration_dir)
+        print("Directory contents:", dir_contents)
+        print("Command output:", out.getvalue())
+
+        # Check that the command output doesn't contain any warnings about allow_migrate
+        self.assertNotIn('allow_migrate', out.getvalue())
+
+        # Check that a migration file was created
+        self.assertIn('0001_initial.py', dir_contents)
 
 class SquashMigrationsTests(MigrationTestBase):
     """
