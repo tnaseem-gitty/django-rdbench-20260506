@@ -1,5 +1,6 @@
 """HTML utilities suitable for global use."""
 
+import html
 import json
 import re
 from html.parser import HTMLParser
@@ -24,15 +25,6 @@ word_split_re = re.compile(r'''([\s<>"']+)''')
 simple_url_re = re.compile(r'^https?://\[?\w', re.IGNORECASE)
 simple_url_2_re = re.compile(r'^www\.|^(?!http)\w[^@]+\.(com|edu|gov|int|mil|net|org)($|/.*)$', re.IGNORECASE)
 
-_html_escapes = {
-    ord('&'): '&amp;',
-    ord('<'): '&lt;',
-    ord('>'): '&gt;',
-    ord('"'): '&quot;',
-    ord("'"): '&#39;',
-}
-
-
 @keep_lazy(str, SafeString)
 def escape(text):
     """
@@ -42,8 +34,12 @@ def escape(text):
     Always escape input, even if it's already escaped and marked as such.
     This may result in double-escaping. If this is a concern, use
     conditional_escape() instead.
+
+    Note: This function now uses html.escape() from the Python standard library.
+    As a result, single quotes (') are now escaped as &#x27; instead of &#39;.
+    These are functionally equivalent in HTML.
     """
-    return mark_safe(str(text).translate(_html_escapes))
+    return mark_safe(html.escape(str(text)))
 
 
 _js_escapes = {

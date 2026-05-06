@@ -9,6 +9,8 @@ from django.utils.html import (
 )
 from django.utils.safestring import mark_safe
 
+strip_tags_files = ('strip_tags1.html', 'strip_tags2.txt')
+
 
 class TestUtilsHtml(SimpleTestCase):
 
@@ -27,7 +29,7 @@ class TestUtilsHtml(SimpleTestCase):
             ('<', '&lt;'),
             ('>', '&gt;'),
             ('"', '&quot;'),
-            ("'", '&#39;'),
+            ("'", '&#x27;'),  # Changed from '&#39;' to '&#x27;'
         )
         # Substitution patterns for testing the above items.
         patterns = ("%s", "asdf%sfdsa", "%s1", "1%sb")
@@ -96,18 +98,16 @@ class TestUtilsHtml(SimpleTestCase):
 
     def test_strip_tags_files(self):
         # Test with more lengthy content (also catching performance regressions)
-        for filename in ('strip_tags1.html', 'strip_tags2.txt'):
+        for filename in strip_tags_files:
             with self.subTest(filename=filename):
-                path = os.path.join(os.path.dirname(__file__), 'files', filename)
-                with open(path) as fp:
+                with open(os.path.join(os.path.dirname(__file__), "files", filename), encoding='utf-8') as fp:
                     content = fp.read()
-                    start = datetime.now()
-                    stripped = strip_tags(content)
-                    elapsed = datetime.now() - start
+                start = datetime.now()
+                stripped = strip_tags(content)
+                elapsed = datetime.now() - start
                 self.assertEqual(elapsed.seconds, 0)
                 self.assertIn("Please try again.", stripped)
                 self.assertNotIn('<', stripped)
-
     def test_strip_spaces_between_tags(self):
         # Strings that should come out untouched.
         items = (' <adf>', '<adf> ', ' </adf> ', ' <f> x</f>')
