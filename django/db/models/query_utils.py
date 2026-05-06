@@ -40,28 +40,33 @@ class Q(tree.Node):
         super().__init__(children=[*args, *sorted(kwargs.items())], connector=_connector, negated=_negated)
 
     def _combine(self, other, conn):
-        if not isinstance(other, Q):
-            raise TypeError(other)
+        from django.db.models.expressions import Exists
+        
+        if not isinstance(other, (Q, Exists)):
+            other = Q(other)
 
         # If the other Q() is empty, ignore it and just use `self`.
         if not other:
-            _, args, kwargs = self.deconstruct()
-            return type(self)(*args, **kwargs)
+            return self
         # Or if this Q is empty, ignore it and just use `other`.
         elif not self:
-            _, args, kwargs = other.deconstruct()
-            return type(other)(*args, **kwargs)
+            return other
 
         obj = type(self)()
         obj.connector = conn
-        obj.add(self, conn)
-        obj.add(other, conn)
+        if isinstance(self, Exists) or isinstance(other, Exists):
+            exists_obj = self if isinstance(self, Exists) else other
+            q_obj = other if isinstance(self, Exists) else self
+            obj.add(exists_obj, conn)
+            obj.add(q_obj, conn)
+        else:
+            obj.add(self, conn)
+            obj.add(other, conn)
         return obj
-
-    def __or__(self, other):
-        return self._combine(other, self.OR)
-
     def __and__(self, other):
+        return self._combine(other, self.AND)
+
+    def __rand__(self, other):
         return self._combine(other, self.AND)
 
     def __invert__(self):

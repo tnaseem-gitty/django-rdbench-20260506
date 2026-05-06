@@ -1173,6 +1173,12 @@ class Exists(Subquery):
             sql = 'NOT {}'.format(sql)
         return sql, params
 
+    def __and__(self, other):
+        return Q(self) & other
+
+    def __rand__(self, other):
+        return other & Q(self)
+
     def select_format(self, compiler, sql, params):
         # Wrap EXISTS() with a CASE WHEN expression if a database backend
         # (e.g. Oracle) doesn't support boolean expression in SELECT or GROUP
