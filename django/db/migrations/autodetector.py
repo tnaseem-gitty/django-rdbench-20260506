@@ -1,5 +1,6 @@
 import functools
 import re
+import enum
 from itertools import chain
 
 from django.conf import settings
@@ -69,12 +70,18 @@ class MigrationAutodetector:
             # If this is a type that implements 'deconstruct' as an instance method,
             # avoid treating this as being deconstructible itself - see #22951
             return obj
+        elif isinstance(obj, enum.Enum):
+            # For Enum objects, use the name instead of the value
+            return f"{obj.__class__.__module__}.{obj.__class__.__name__}.{obj.name}"
         elif hasattr(obj, 'deconstruct'):
             deconstructed = obj.deconstruct()
             if isinstance(obj, models.Field):
                 # we have a field which also returns a name
                 deconstructed = deconstructed[1:]
             path, args, kwargs = deconstructed
+            # Check if the default value is an Enum
+            if 'default' in kwargs and isinstance(kwargs['default'], enum.Enum):
+                kwargs['default'] = f"{kwargs['default'].__class__.__module__}.{kwargs['default'].__class__.__name__}.{kwargs['default'].name}"
             return (
                 path,
                 [self.deep_deconstruct(value) for value in args],
@@ -85,7 +92,6 @@ class MigrationAutodetector:
             )
         else:
             return obj
-
     def only_relation_agnostic_fields(self, fields):
         """
         Return a definition of the fields that ignores field names and

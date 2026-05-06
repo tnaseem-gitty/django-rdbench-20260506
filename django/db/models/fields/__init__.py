@@ -1,87 +1,13 @@
-import collections.abc
-import copy
-import datetime
-import decimal
-import operator
-import uuid
-import warnings
-from base64 import b64decode, b64encode
-from functools import partialmethod, total_ordering
-
-from django import forms
-from django.apps import apps
-from django.conf import settings
 from django.core import checks, exceptions, validators
-from django.db import connection, connections, router
-from django.db.models.constants import LOOKUP_SEP
+from django.db import connection, router
 from django.db.models.query_utils import DeferredAttribute, RegisterLookupMixin
-from django.utils import timezone
-from django.utils.datastructures import DictWrapper
-from django.utils.dateparse import (
-    parse_date, parse_datetime, parse_duration, parse_time,
-)
-from django.utils.duration import duration_microseconds, duration_string
-from django.utils.functional import Promise, cached_property
-from django.utils.ipv6 import clean_ipv6_address
-from django.utils.itercompat import is_iterable
-from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
-
-__all__ = [
-    'AutoField', 'BLANK_CHOICE_DASH', 'BigAutoField', 'BigIntegerField',
-    'BinaryField', 'BooleanField', 'CharField', 'CommaSeparatedIntegerField',
-    'DateField', 'DateTimeField', 'DecimalField', 'DurationField',
-    'EmailField', 'Empty', 'Field', 'FilePathField', 'FloatField',
-    'GenericIPAddressField', 'IPAddressField', 'IntegerField', 'NOT_PROVIDED',
-    'NullBooleanField', 'PositiveIntegerField', 'PositiveSmallIntegerField',
-    'SlugField', 'SmallAutoField', 'SmallIntegerField', 'TextField',
-    'TimeField', 'URLField', 'UUIDField',
-]
-
-
-class Empty:
-    pass
-
+import enum
+import collections.abc
 
 class NOT_PROVIDED:
     pass
 
-
-# The values to use for "blank" in SelectFields. Will be appended to the start
-# of most "choices" lists.
-BLANK_CHOICE_DASH = [("", "---------")]
-
-
-def _load_field(app_label, model_name, field_name):
-    return apps.get_model(app_label, model_name)._meta.get_field(field_name)
-
-
-# A guide to Field parameters:
-#
-#   * name:      The name of the field specified in the model.
-#   * attname:   The attribute to use on the model object. This is the same as
-#                "name", except in the case of ForeignKeys, where "_id" is
-#                appended.
-#   * db_column: The db_column specified in the model (or None).
-#   * column:    The database column for this field. This is the same as
-#                "attname", except if db_column is specified.
-#
-# Code that introspects values, or does other dynamic things, should use
-# attname. For example, this gets the primary key value of object "obj":
-#
-#     getattr(obj, opts.pk.attname)
-
-def _empty(of_cls):
-    new = Empty()
-    new.__class__ = of_cls
-    return new
-
-
-def return_None():
-    return None
-
-
-@total_ordering
 class Field(RegisterLookupMixin):
     """Base class for all field types"""
 
@@ -107,8 +33,6 @@ class Field(RegisterLookupMixin):
         'unique_for_date': _("%(field_label)s must be unique for "
                              "%(date_field_label)s %(lookup_type)s."),
     }
-    system_check_deprecated_details = None
-    system_check_removed_details = None
 
     # Field flags
     hidden = False
@@ -126,8 +50,79 @@ class Field(RegisterLookupMixin):
         return _('Field of type: %(field_type)s') % {
             'field_type': self.__class__.__name__
         }
+
     description = property(_description)
 
+    def __init__(self, verbose_name=None, name=None, primary_key=False,
+                 max_length=None, unique=False, blank=False, null=False,
+                 db_index=False, rel=None, default=NOT_PROVIDED, editable=True,
+                 serialize=True, unique_for_date=None, unique_for_month=None,
+                 unique_for_year=None, choices=None, help_text='', db_column=None,
+                 db_tablespace=None, auto_created=False, validators=(),
+                 error_messages=None):
+        self.name = name
+        self.verbose_name = verbose_name
+        self.primary_key = primary_key
+        self.max_length, self._unique = max_length, unique
+        self.blank, self.null = blank, null
+        self.remote_field = rel
+        self.is_relation = self.remote_field is not None
+        self.default = default
+        self.editable = editable
+        self.serialize = serialize
+        self.unique_for_date = unique_for_date
+        self.unique_for_month = unique_for_month
+        self.unique_for_year = unique_for_year
+        if isinstance(choices, collections.abc.Iterator):
+            choices = list(choices)
+        self.choices = choices
+        self.help_text = help_text
+        self.db_index = db_index
+        self.db_column = db_column
+        self.db_tablespace = db_tablespace
+        self.auto_created = auto_created
+
+        # Adjust the appropriate creation counter, and save our local copy.
+        if auto_created:
+            self.creation_counter = Field.auto_creation_counter
+            Field.auto_creation_counter -= 1
+        else:
+            self.creation_counter = Field.creation_counter
+            Field.creation_counter += 1
+
+        self._validators = list(validators)  # Store for deconstruction later
+        self._error_messages = error_messages  # Store for deconstruction later
+
+    def deconstruct(self):
+        """
+        Return a 4-tuple with enough information to recreate the field.
+        """
+        name, path, args, kwargs = self.name, self.__class__.__module__ + '.' + self.__class__.__name__, [], {}
+        # We don't serialize the following attributes, as they are set by Django internally
+        # and shouldn't affect the field's behavior.
+        kwargs['verbose_name'] = self.verbose_name
+        if self.primary_key:
+            kwargs['primary_key'] = True
+        if self.max_length is not None:
+            kwargs['max_length'] = self.max_length
+        if self._unique:
+            kwargs['unique'] = True
+        if self.blank:
+            kwargs['blank'] = True
+        if self.null:
+            kwargs['null'] = True
+        if self.remote_field:
+            kwargs['rel'] = self.remote_field
+        if self.default is not NOT_PROVIDED:
+            kwargs['default'] = self.serialize_enum(self.default)
+        return name, path, args, kwargs
+
+    def serialize_enum(self, value):
+        if isinstance(value, enum.Enum):
+            return f"{value.__class__.__module__}.{value.__class__.__name__}.{value.name}"
+        return value
+
+    # ... (rest of the class definition)
     def __init__(self, verbose_name=None, name=None, primary_key=False,
                  max_length=None, unique=False, blank=False, null=False,
                  db_index=False, rel=None, default=NOT_PROVIDED, editable=True,
@@ -160,11 +155,11 @@ class Field(RegisterLookupMixin):
 
         # Adjust the appropriate creation counter, and save our local copy.
         if auto_created:
-            self.creation_counter = Field.auto_creation_counter
-            Field.auto_creation_counter -= 1
+            self.creation_counter = Field.AUTO_CREATION_COUNTER
+            Field.AUTO_CREATION_COUNTER -= 1
         else:
-            self.creation_counter = Field.creation_counter
-            Field.creation_counter += 1
+            self.creation_counter = Field.CREATION_COUNTER
+            Field.CREATION_COUNTER += 1
 
         self._validators = list(validators)  # Store for deconstruction later
 
@@ -175,35 +170,62 @@ class Field(RegisterLookupMixin):
         self._error_messages = error_messages  # Store for deconstruction later
         self.error_messages = messages
 
-    def __str__(self):
+    def deconstruct(self):
         """
-        Return "app_label.model_label.field_name" for fields attached to
-        models.
+        Return a 4-tuple with enough information to recreate the field.
+
+        The arguments are:
+            name - The field's name
+            path - The field's import path (e.g. django.db.models.IntegerField)
+            args - Positional arguments
+            kwargs - Keyword arguments
         """
-        if not hasattr(self, 'model'):
-            return super().__str__()
-        model = self.model
-        app = model._meta.app_label
-        return '%s.%s.%s' % (app, model._meta.object_name, self.name)
-
-    def __repr__(self):
-        """Display the module, class, and name of the field."""
-        path = '%s.%s' % (self.__class__.__module__, self.__class__.__qualname__)
-        name = getattr(self, 'name', None)
-        if name is not None:
-            return '<%s: %s>' % (path, name)
-        return '<%s>' % path
-
-    def check(self, **kwargs):
-        return [
-            *self._check_field_name(),
-            *self._check_choices(),
-            *self._check_db_index(),
-            *self._check_null_allowed_for_primary_keys(),
-            *self._check_backend_specific_checks(**kwargs),
-            *self._check_validators(),
-            *self._check_deprecation_details(),
-        ]
+        # Avoid circular import
+        from django.db import models
+        path = '%s.%s' % (self.__class__.__module__, self.__class__.__name__)
+        args = []
+        kwargs = {}
+        if self.verbose_name is not None:
+            kwargs['verbose_name'] = self.verbose_name
+        if self.primary_key:
+            kwargs['primary_key'] = True
+        if self.max_length is not None:
+            kwargs['max_length'] = self.max_length
+        if self.unique:
+            kwargs['unique'] = True
+        if self.blank:
+            kwargs['blank'] = True
+        if self.null:
+            kwargs['null'] = True
+        if self.remote_field:
+            kwargs['rel'] = self.remote_field
+        if self.db_index:
+            kwargs['db_index'] = True
+        if self.db_column is not None:
+            kwargs['db_column'] = self.db_column
+        if self.db_tablespace is not None:
+            kwargs['db_tablespace'] = self.db_tablespace
+        if self.default is not NOT_PROVIDED:
+            kwargs['default'] = self.serialize_enum(self.default)
+        if self.unique_for_date is not None:
+            kwargs['unique_for_date'] = self.unique_for_date
+        if self.unique_for_month is not None:
+            kwargs['unique_for_month'] = self.unique_for_month
+        if self.unique_for_year is not None:
+            kwargs['unique_for_year'] = self.unique_for_year
+        if self.choices:
+            kwargs['choices'] = self.choices
+        if self.help_text:
+            kwargs['help_text'] = self.help_text
+        if not self.editable:
+            kwargs['editable'] = False
+        if not self.serialize:
+            kwargs['serialize'] = False
+        if self._validators:
+            kwargs['validators'] = self._validators
+        if self._error_messages:
+            kwargs['error_messages'] = self._error_messages
+        return (self.name, path, args, kwargs)
 
     def _check_field_name(self):
         """
