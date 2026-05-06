@@ -17,7 +17,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.mail.utils import DNS_NAME
 from django.utils.encoding import force_str
-
+import idna
 # Don't BASE64-encode UTF-8 messages so that we avoid unwanted attention from
 # some spam filters.
 utf8_charset = Charset.Charset('utf-8')
@@ -257,7 +257,7 @@ class EmailMessage:
             msg['Date'] = formatdate(localtime=settings.EMAIL_USE_LOCALTIME)
         if 'message-id' not in header_names:
             # Use cached DNS_NAME for performance
-            msg['Message-ID'] = make_msgid(domain=DNS_NAME)
+            msg['Message-ID'] = make_msgid(domain=idna.encode(DNS_NAME).decode('ascii'))
         for name, value in self.extra_headers.items():
             if name.lower() != 'from':  # From is already handled
                 msg[name] = value
