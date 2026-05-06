@@ -38,3 +38,35 @@ class YearLookupTests(SimpleTestCase):
         msg = 'subclasses of YearLookup must provide a get_bound_params() method'
         with self.assertRaisesMessage(NotImplementedError, msg):
             look_up.get_bound_params(datetime(2010, 1, 1, 0, 0, 0), datetime(2010, 1, 1, 23, 59, 59))
+
+    def test_iso_year_lookup(self):
+        from django.db.models import F
+        from django.db.models.fields import Field
+        from django.db.models.lookups import IsoYearLookup
+
+        class MockField(Field):
+            def get_prep_value(self, value):
+                return value
+
+        lhs = F('date_column')
+        lhs.output_field = MockField()
+        look_up = IsoYearLookup(lhs, 2020)
+        
+        compiler = mock.Mock()
+        compiler.compile.return_value = ('date_column', [])
+        connection = mock.Mock()
+        connection.ops.date_extract_sql.return_value = ('EXTRACT(ISOYEAR FROM %s)', [])
+
+        sql, params = look_up.as_sql(compiler, connection)
+        
+        # Check that date_extract_sql was called with the correct parameters
+        connection.ops.date_extract_sql.assert_called_once_with('iso_year', 'date_column')
+        
+        # Check that the SQL uses the EXTRACT function
+        self.assertEqual(sql, 'EXTRACT(ISOYEAR FROM %s) = %s')
+        
+        # Check that the year value is in the parameters
+        self.assertEqual(params, [2020])
+
+        # Check that the optimization is not applied for iso_year
+        self.assertFalse(hasattr(look_up, 'get_bound_params'))

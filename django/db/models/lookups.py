@@ -538,35 +538,40 @@ class IRegex(Regex):
 
 
 class YearLookup(Lookup):
+    lookup_name = 'year'
+
     def year_lookup_bounds(self, connection, year):
-        output_field = self.lhs.lhs.output_field
-        if isinstance(output_field, DateTimeField):
-            bounds = connection.ops.year_lookup_bounds_for_datetime_field(year)
-        else:
-            bounds = connection.ops.year_lookup_bounds_for_date_field(year)
-        return bounds
+        raise NotImplementedError('subclasses of YearLookup must provide a year_lookup_bounds() method')
 
     def as_sql(self, compiler, connection):
-        # Avoid the extract operation if the rhs is a direct value to allow
-        # indexes to be used.
         if self.rhs_is_direct_value():
             # Skip the extract part by directly using the originating field,
             # that is self.lhs.lhs.
             lhs_sql, params = self.process_lhs(compiler, connection, self.lhs.lhs)
-            rhs_sql, _ = self.process_rhs(compiler, connection)
-            rhs_sql = self.get_direct_rhs_sql(connection, rhs_sql)
+            rhs_sql, rhs_params = self.process_rhs(compiler, connection)
+            params.extend(rhs_params)
             start, finish = self.year_lookup_bounds(connection, self.rhs)
-            params.extend(self.get_bound_params(start, finish))
-            return '%s %s' % (lhs_sql, rhs_sql), params
+            return f'{lhs_sql} BETWEEN %s AND %s', params + [start, finish]
         return super().as_sql(compiler, connection)
 
     def get_direct_rhs_sql(self, connection, rhs):
         return connection.operators[self.lookup_name] % rhs
 
     def get_bound_params(self, start, finish):
-        raise NotImplementedError(
-            'subclasses of YearLookup must provide a get_bound_params() method'
-        )
+        raise NotImplementedError('subclasses of YearLookup must provide a get_bound_params() method')
+
+
+@Field.register_lookup
+class IsoYearLookup(Lookup):
+    lookup_name = 'iso_year'
+
+    def as_sql(self, compiler, connection):
+        lhs_sql, params = self.process_lhs(compiler, connection)
+        rhs_sql, rhs_params = self.process_rhs(compiler, connection)
+        params.extend(rhs_params)
+        extract_sql, extract_params = connection.ops.date_extract_sql('iso_year', lhs_sql)
+        params = extract_params + params
+        return f'{extract_sql} = %s', params
 
 
 class YearExact(YearLookup, Exact):
