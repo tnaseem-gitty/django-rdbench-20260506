@@ -148,6 +148,10 @@ class View:
             request.path,
             extra={"status_code": 405, "request": request},
         )
+        if self.view_is_async:
+            async def async_response():
+                return HttpResponseNotAllowed(self._allowed_methods())
+            return async_response()
         return HttpResponseNotAllowed(self._allowed_methods())
 
     def options(self, request, *args, **kwargs):
