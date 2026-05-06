@@ -198,10 +198,11 @@ class RelatedFieldListFilter(FieldListFilter):
         related_admin = model_admin.admin_site._registry.get(field.remote_field.model)
         if related_admin is not None:
             ordering = related_admin.get_ordering(request)
+        if not ordering:
+            ordering = field.remote_field.model._meta.ordering
         return field.get_choices(include_blank=False, ordering=ordering)
 
-    def choices(self, changelist):
-        yield {
+    def choices(self, changelist):        yield {
             'selected': self.lookup_val is None and not self.lookup_val_isnull,
             'query_string': changelist.get_query_string(remove=[self.lookup_kwarg, self.lookup_kwarg_isnull]),
             'display': _('All'),
@@ -418,5 +419,11 @@ FieldListFilter.register(lambda f: True, AllValuesFieldListFilter)
 
 class RelatedOnlyFieldListFilter(RelatedFieldListFilter):
     def field_choices(self, field, request, model_admin):
+        ordering = ()
+        related_admin = model_admin.admin_site._registry.get(field.remote_field.model)
+        if related_admin is not None:
+            ordering = related_admin.get_ordering(request)
+        if not ordering:
+            ordering = field.remote_field.model._meta.ordering
         pk_qs = model_admin.get_queryset(request).distinct().values_list('%s__pk' % self.field_path, flat=True)
-        return field.get_choices(include_blank=False, limit_choices_to={'pk__in': pk_qs})
+        return field.get_choices(include_blank=False, limit_choices_to={'pk__in': pk_qs}, ordering=ordering)
