@@ -164,17 +164,24 @@ def translate_url(url, lang_code):
     Return the original URL if no translated version is found.
     """
     parsed = urlsplit(url)
+    path = parsed.path
     try:
-        match = resolve(parsed.path)
+        match = resolve(path)
     except Resolver404:
-        pass
+        # If the path couldn't be resolved, we want to add the language code
+        path = f'/{lang_code}/{path.lstrip("/")}'
     else:
         to_be_reversed = "%s:%s" % (match.namespace, match.url_name) if match.namespace else match.url_name
         with override(lang_code):
             try:
-                url = reverse(to_be_reversed, args=match.args, kwargs=match.kwargs)
+                # Filter out kwargs that are not present in the reversed URL
+                filtered_kwargs = {k: v for k, v in match.kwargs.items() if f'{k}=' in url}
+                path = reverse(to_be_reversed, args=match.args, kwargs=filtered_kwargs)
             except NoReverseMatch:
                 pass
-            else:
-                url = urlunsplit((parsed.scheme, parsed.netloc, url, parsed.query, parsed.fragment))
-    return url
+    
+    # Add the language code to the beginning of the path if it's not already there
+    if not path.startswith(f'/{lang_code}/'):
+        path = f'/{lang_code}/{path.lstrip("/")}'
+    
+    return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment))
