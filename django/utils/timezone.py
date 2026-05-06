@@ -73,10 +73,13 @@ def get_current_timezone_name():
 
 def _get_timezone_name(timezone):
     """Return the name of ``timezone``."""
-    return str(timezone)
+    name = str(timezone)
+    if name.startswith("Etc/GMT"):
+        sign = '-' if name[7] == '+' else '+'
+        return sign + name[8:]
+    return name
 
 # Timezone selection functions.
-
 # These functions don't change os.environ['TZ'] and call time.tzset()
 # because it isn't thread safe.
 
