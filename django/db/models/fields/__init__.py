@@ -1501,15 +1501,13 @@ class DecimalField(Field):
             return self.context.create_decimal_from_float(value)
         try:
             return decimal.Decimal(value)
-        except decimal.InvalidOperation:
+        except (decimal.InvalidOperation, TypeError):
             raise exceptions.ValidationError(
-                self.error_messages['invalid'],
-                code='invalid',
-                params={'value': value},
+                "Invalid value for DecimalField.",
+                code='invalid'
             )
 
-    def get_db_prep_save(self, value, connection):
-        return connection.ops.adapt_decimalfield_value(self.to_python(value), self.max_digits, self.decimal_places)
+    def get_db_prep_save(self, value, connection):        return connection.ops.adapt_decimalfield_value(self.to_python(value), self.max_digits, self.decimal_places)
 
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
