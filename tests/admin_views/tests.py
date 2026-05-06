@@ -6531,12 +6531,22 @@ class AdminSiteFinalCatchAllPatternTests(TestCase):
       otherwise valid or not.
     * APPEND_SLASH is applied for staff if needed.
     * Otherwise Http404.
-    * Catch-all view disabled via AdminSite.final_catch_all_view.
     """
-    def test_unknown_url_redirects_login_if_not_authenticated(self):
-        unknown_url = '/test_admin/admin/unknown/'
+    @override_settings(FORCE_SCRIPT_NAME='/script_name')
+    def test_redirect_includes_script_name(self):
+        superuser = User.objects.create_superuser(
+            username='super',
+            password='secret',
+            email='super@example.com',
+        )
+        self.client.force_login(superuser)
+        unknown_url = '/script_name/test_admin/admin/unknown/'
         response = self.client.get(unknown_url)
         self.assertRedirects(response, '%s?next=%s' % (reverse('admin:login'), unknown_url))
+
+    def test_unknown_url_redirects_login_if_not_authenticated(self):
+        unknown_url = '/test_admin/admin/unknown/'
+        response = self.client.get(unknown_url)        self.assertRedirects(response, '%s?next=%s' % (reverse('admin:login'), unknown_url))
 
     def test_unknown_url_404_if_authenticated(self):
         superuser = User.objects.create_superuser(
