@@ -52,20 +52,19 @@ class ModelIterable(BaseIterable):
         # and annotations.
         results = compiler.execute_sql(chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size)
         select, klass_info, annotation_col_map = (compiler.select, compiler.klass_info,
-                                                  compiler.annotation_col_map)
+        compiler.annotation_col_map)
+        field_names = list(select)
         model_cls = klass_info['model']
         select_fields = klass_info['select_fields']
-        model_fields_start, model_fields_end = select_fields[0], select_fields[-1] + 1
+        model_fields_start, model_fields_end = select_fields or (0, len(field_names))
         init_list = [f[0].target.attname
                      for f in select[model_fields_start:model_fields_end]]
         related_populators = get_related_populators(klass_info, select, db)
         known_related_objects = [
             (field, related_objs, operator.attrgetter(*[
-                field.attname
-                if from_field == 'self' else
-                queryset.model._meta.get_field(from_field).attname
-                for from_field in field.from_fields
-            ])) for field, related_objs in queryset._known_related_objects.items()
+                f.attname for f in field.foreign_related_fields
+            ]))
+            for field, related_objs in queryset._known_related_objects.items()
         ]
         for row in compiler.results_iter(results):
             obj = model_cls.from_db(db, init_list, row[model_fields_start:model_fields_end])
@@ -77,7 +76,7 @@ class ModelIterable(BaseIterable):
 
             # Add the known related objects to the model.
             for field, rel_objs, rel_getter in known_related_objects:
-                # Avoid overwriting objects loaded by, e.g., select_related().
+                # Avoid overwriting objects loaded e.g. by select_related
                 if field.is_cached(obj):
                     continue
                 rel_obj_id = rel_getter(obj)
@@ -89,7 +88,6 @@ class ModelIterable(BaseIterable):
                     setattr(obj, field.name, rel_obj)
 
             yield obj
-
 
 class ValuesIterable(BaseIterable):
     """
