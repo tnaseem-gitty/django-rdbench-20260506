@@ -3,10 +3,10 @@ The main QuerySet implementation. This provides the public API for the ORM.
 """
 
 import copy
+from django.db import models
 import operator
 import warnings
-from collections import namedtuple
-from functools import lru_cache
+from collections import namedtuplefrom functools import lru_cache
 from itertools import chain
 
 from django.conf import settings
