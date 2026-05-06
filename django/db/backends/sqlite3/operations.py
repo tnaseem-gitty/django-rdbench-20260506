@@ -21,6 +21,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         'DateTimeField': 'TEXT',
     }
     explain_prefix = 'EXPLAIN QUERY PLAN'
+    json_key_extract_op = '->'
 
     def bulk_batch_size(self, fields, objs):
         """
