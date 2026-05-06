@@ -132,13 +132,19 @@ def call_command(command_name, *args, **options):
     parser_actions = list(get_actions(parser))
     # Any required arguments which are passed in via **options must be passed
     # to parse_args().
+    # Any required arguments or arguments in required mutually exclusive groups
+    # which are passed in via **options must be passed to parse_args().
+    required_groups = [
+        group for group in parser._mutually_exclusive_groups if group.required
+    ]
     parse_args += [
         '{}={}'.format(min(opt.option_strings), arg_options[opt.dest])
-        for opt in parser_actions if opt.required and opt.dest in options
+        for opt in parser_actions
+        if (opt.required or any(opt in group._group_actions for group in required_groups))
+        and opt.dest in options
     ]
     defaults = parser.parse_args(args=parse_args)
-    defaults = dict(defaults._get_kwargs(), **arg_options)
-    # Raise an error if any unknown options were passed.
+    defaults = dict(defaults._get_kwargs(), **arg_options)    # Raise an error if any unknown options were passed.
     stealth_options = set(command.base_stealth_options + command.stealth_options)
     dest_parameters = {action.dest for action in parser_actions}
     valid_options = (dest_parameters | stealth_options).union(opt_mapping)
