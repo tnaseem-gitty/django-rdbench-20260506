@@ -1211,10 +1211,14 @@ class Exists(Subquery):
 
     def as_sql(self, compiler, connection, template=None, **extra_context):
         query = self.query.exists(using=connection.alias)
+        if not query:
+            if self.negated:
+                return '1=1', []
+            else:
+                return '0=1', []
         sql, params = super().as_sql(
             compiler,
-            connection,
-            template=template,
+            connection,            template=template,
             query=query,
             **extra_context,
         )
