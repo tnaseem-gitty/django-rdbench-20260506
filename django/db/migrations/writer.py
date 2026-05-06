@@ -173,13 +173,15 @@ class MigrationWriter:
         else:
             imports.add("from django.db import migrations")
 
-        # Sort imports by the package / module to be imported (the part after
-        # "from" in "from ... import ..." or after "import" in "import ...").
-        sorted_imports = sorted(imports, key=lambda i: i.split()[1])
+        # Separate and sort imports by type: 'import' and 'from ... import ...'
+        print("Imports before sorting:", imports)  # Debug print
+        import_statements = sorted([imp for imp in imports if imp.startswith("import")], key=lambda i: i.split()[1])
+        from_import_statements = sorted([imp for imp in imports if imp.startswith("from")], key=lambda i: i.split()[1])
+        sorted_imports = import_statements + from_import_statements
+        print("Sorted imports:", sorted_imports)  # Debug print
         items["imports"] = "\n".join(sorted_imports) + "\n" if imports else ""
         if migration_imports:
-            items["imports"] += (
-                "\n\n# Functions from the following migrations need manual "
+            items["imports"] += (                "\n\n# Functions from the following migrations need manual "
                 "copying.\n# Move them and any dependencies into this file, "
                 "then update the\n# RunPython operations to refer to the local "
                 "versions:\n# %s"
