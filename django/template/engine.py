@@ -160,11 +160,10 @@ class Engine:
         if isinstance(context, Context):
             return t.render(context)
         else:
-            return t.render(Context(context))
+            return t.render(Context(context, autoescape=self.autoescape))
 
     def select_template(self, template_name_list):
-        """
-        Given a list of template names, return the first that can be loaded.
+        """        Given a list of template names, return the first that can be loaded.
         """
         if not template_name_list:
             raise TemplateDoesNotExist("No template names provided")
