@@ -376,11 +376,11 @@ class Options:
         if not self.pk and field.primary_key:
             self.pk = field
             field.serialize = False
-
+            if field.remote_field and not field.remote_field.parent_link:
+                field.remote_field.parent_link = True
     def setup_proxy(self, target):
         """
-        Do the internal setup so that the current model is a proxy for
-        "target".
+        Do the internal setup so that the current model is a proxy for        "target".
         """
         self.pk = target._meta.pk
         self.proxy_for_model = target
