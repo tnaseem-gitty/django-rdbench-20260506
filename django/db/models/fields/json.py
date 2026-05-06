@@ -227,9 +227,10 @@ class HasKeyLookup(PostgresOperatorLookup):
         return super().as_postgresql(compiler, connection)
 
     def as_sqlite(self, compiler, connection):
-        return self.as_sql(
-            compiler, connection, template="JSON_TYPE(%s, %%s) IS NOT NULL"
-        )
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        rhs_params = ["$.%s" % json.dumps(param).strip('"') for param in rhs_params]
+        return "JSON_TYPE(%s, %%s) IS NOT NULL" % lhs, tuple(lhs_params) + tuple(rhs_params)
 
 
 class HasKey(HasKeyLookup):
