@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.test import SimpleTestCase, TestCase
-
 from .models import Post
 
 
@@ -39,6 +39,12 @@ class TestCharField(TestCase):
         p2 = Post.objects.get(title='Carnival!')
         self.assertEqual(p1, p2)
         self.assertEqual(p2.title, Event.C)
+    def test_max_length_validator(self):
+        cf1 = models.CharField()
+        cf2 = models.CharField(max_length=100)
+        self.assertEqual(len(cf1.validators), 0)
+        self.assertEqual(len(cf2.validators), 1)
+        self.assertIsInstance(cf2.validators[0], MaxLengthValidator)
 
 
 class TestMethods(SimpleTestCase):
