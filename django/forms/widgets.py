@@ -387,9 +387,10 @@ class FileInput(Input):
     def value_omitted_from_data(self, data, files, name):
         return name not in files
 
+    def use_required_attribute(self, initial):
+        return super().use_required_attribute(initial) and not initial
 
 FILE_INPUT_CONTRADICTION = object()
-
 
 class ClearableFileInput(FileInput):
     clear_checkbox_label = _('Clear')
@@ -449,11 +450,8 @@ class ClearableFileInput(FileInput):
                 return FILE_INPUT_CONTRADICTION
             # False signals to clear any existing value, as opposed to just None
             return False
-        return upload
-
     def use_required_attribute(self, initial):
         return super().use_required_attribute(initial) and not initial
-
     def value_omitted_from_data(self, data, files, name):
         return (
             super().value_omitted_from_data(data, files, name) and
