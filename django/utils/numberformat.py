@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.utils.safestring import mark_safe
+from django.utils.translation import get_language, to_locale
 
 
 def format(number, decimal_sep, decimal_pos=None, grouping=0, thousand_sep='',
@@ -31,6 +32,9 @@ def format(number, decimal_sep, decimal_pos=None, grouping=0, thousand_sep='',
         # scientific notation to avoid high memory usage in {:f}'.format().
         _, digits, exponent = number.as_tuple()
         if abs(exponent) + len(digits) > 200:
+            if decimal_pos is not None:
+                # If decimal_pos is specified, format as 0 with specified decimal places
+                return '0.' + '0' * decimal_pos
             number = '{:e}'.format(number)
             coefficient, exponent = number.split('e')
             # Format the coefficient.
