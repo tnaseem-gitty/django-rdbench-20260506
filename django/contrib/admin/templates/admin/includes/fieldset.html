@@ -13,7 +13,7 @@
                         {{ field.field }}{{ field.label_tag }}
                     {% else %}
                         {{ field.label_tag }}
-                        {% if field.is_readonly %}
+                        {% if not has_change_permission or field.is_readonly %}
                             <div class="readonly">{{ field.contents }}</div>
                         {% else %}
                             {{ field.field }}
