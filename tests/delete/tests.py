@@ -522,3 +522,10 @@ class FastDeleteTests(TestCase):
                 User.objects.filter(avatar__desc='missing').delete(),
                 (0, {'delete.User': 0})
             )
+    
+    def test_delete_no_dependencies_clears_pk(self):
+        m = M.objects.create()
+        pk = m.pk
+        m.delete()
+        self.assertIsNone(m.pk)
+        self.assertFalse(M.objects.filter(pk=pk).exists())

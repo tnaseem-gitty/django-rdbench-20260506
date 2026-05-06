@@ -272,13 +272,14 @@ class Collector:
         deleted_counter = Counter()
 
         # Optimize for the case with a single obj and no dependencies
+        # Optimize for the case with a single obj and no dependencies
         if len(self.data) == 1 and len(instances) == 1:
             instance = list(instances)[0]
             if self.can_fast_delete(instance):
                 with transaction.mark_for_rollback_on_error():
                     count = sql.DeleteQuery(model).delete_batch([instance.pk], self.using)
+                    setattr(instance, model._meta.pk.attname, None)
                 return count, {model._meta.label: count}
-
         with transaction.atomic(using=self.using, savepoint=False):
             # send pre_delete signals
             for model, obj in self.instances_with_model():
