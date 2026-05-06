@@ -358,3 +358,21 @@ class ConstraintNameTests(TestCase):
                 constraints = [constraint]
 
         self.assertEqual(checks.run_checks(app_configs=apps.get_app_configs()), [])
+@isolate_apps('check_framework', attr_name='apps')
+class OrderingCheckTests(SimpleTestCase):
+    def test_ordering_with_lookup_not_raising_e015(self):
+        class Product(models.Model):
+            parent = models.ForeignKey('self', models.CASCADE, null=True)
+
+        class Supply(models.Model):
+            product = models.ForeignKey(Product, models.CASCADE)
+
+        class Stock(models.Model):
+            supply = models.ForeignKey(Supply, models.CASCADE)
+
+            class Meta:
+                ordering = ['supply__product__parent__isnull']
+
+        errors = checks.run_checks(app_configs=self.apps.get_app_configs())
+        self.assertEqual(errors, [])
+
