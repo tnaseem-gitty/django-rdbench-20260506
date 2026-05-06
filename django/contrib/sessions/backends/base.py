@@ -114,11 +114,16 @@ class SessionBase:
         )
 
     def decode(self, session_data):
+        from django.conf import settings
+        if getattr(settings, 'DEFAULT_HASHING_ALGORITHM', None) == 'sha1':
+            try:
+                return self._legacy_decode(session_data)
+            except Exception:
+                pass
         try:
             return signing.loads(session_data, salt=self.key_salt, serializer=self.serializer)
-        # RemovedInDjango40Warning: when the deprecation ends, handle here
-        # exceptions similar to what _legacy_decode() does now.
         except Exception:
+            # If the new format fails, try the legacy format as a fallback
             return self._legacy_decode(session_data)
 
     def _legacy_decode(self, session_data):

@@ -14,6 +14,9 @@ class CustomSession(AbstractBaseSession):
     """
     account_id = models.IntegerField(null=True, db_index=True)
 
+    class Meta:
+        app_label = 'sessions_tests'
+
     @classmethod
     def get_session_store_class(cls):
         return SessionStore
