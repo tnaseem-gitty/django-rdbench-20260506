@@ -119,10 +119,13 @@ def get_format(format_type, lang=None, use_l10n=None):
     except KeyError:
         pass
 
+    # Convert lazy objects to strings
+    if hasattr(format_type, '_proxy____args'):
+        format_type = str(format_type)
+
     # The requested format_type has not been cached yet. Try to find it in any
     # of the format_modules for the given lang if l10n is enabled. If it's not
-    # there or if l10n is disabled, fall back to the project settings.
-    val = None
+    # there or if l10n is disabled, fall back to the project settings.    val = None
     if use_l10n:
         for module in get_format_modules(lang):
             val = getattr(module, format_type, None)
