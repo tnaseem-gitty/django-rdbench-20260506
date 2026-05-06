@@ -31,9 +31,14 @@ from .utils import get_callable
 
 class ResolverMatch:
     def __init__(self, func, args, kwargs, url_name=None, app_names=None, namespaces=None, route=None, tried=None):
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
+        if isinstance(func, functools.partial):
+            self.func = func.func
+            self.args = func.args + args
+            self.kwargs = {**func.keywords, **kwargs}
+        else:
+            self.func = func
+            self.args = args
+            self.kwargs = kwargs
         self.url_name = url_name
         self.route = route
         self.tried = tried
@@ -45,12 +50,12 @@ class ResolverMatch:
         self.namespaces = [x for x in namespaces if x] if namespaces else []
         self.namespace = ':'.join(self.namespaces)
 
-        if not hasattr(func, '__name__'):
+        if not hasattr(self.func, '__name__'):
             # A class-based view
-            self._func_path = func.__class__.__module__ + '.' + func.__class__.__name__
+            self._func_path = self.func.__class__.__module__ + '.' + self.func.__class__.__name__
         else:
             # A function-based view
-            self._func_path = func.__module__ + '.' + func.__name__
+            self._func_path = self.func.__module__ + '.' + self.func.__name__
 
         view_path = url_name or self._func_path
         self.view_name = ':'.join(self.namespaces + [view_path])
@@ -59,10 +64,18 @@ class ResolverMatch:
         return (self.func, self.args, self.kwargs)[index]
 
     def __repr__(self):
-        return "ResolverMatch(func=%s, args=%s, kwargs=%s, url_name=%s, app_names=%s, namespaces=%s, route=%s)" % (
-            self._func_path, self.args, self.kwargs, self.url_name,
-            self.app_names, self.namespaces, self.route,
-        )
+        if isinstance(self.func, functools.partial):
+            partial_func = self.func
+            return "ResolverMatch(func=%s, args=%s, kwargs=%s, url_name=%s, app_names=%s, namespaces=%s, route=%s, partial_args=%s, partial_kwargs=%s)" % (
+                self._func_path, self.args, self.kwargs, self.url_name,
+                self.app_names, self.namespaces, self.route,
+                partial_func.args, partial_func.keywords,
+            )
+        else:
+            return "ResolverMatch(func=%s, args=%s, kwargs=%s, url_name=%s, app_names=%s, namespaces=%s, route=%s)" % (
+                self._func_path, self.args, self.kwargs, self.url_name,
+                self.app_names, self.namespaces, self.route,
+            )
 
 
 def get_resolver(urlconf=None):
