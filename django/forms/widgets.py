@@ -1156,7 +1156,10 @@ class SelectDateWidget(Widget):
             input_format = get_format("DATE_INPUT_FORMATS")[0]
             input_format = formats.sanitize_strftime_format(input_format)
             try:
-                date_value = datetime.date(int(y), int(m), int(d))
+                y, m, d = int(y), int(m), int(d)
+                if y > 9999 or m > 12 or d > 31:
+                    raise ValueError
+                date_value = datetime.date(y, m, d)
             except ValueError:
                 # Return pseudo-ISO dates with zeros for any unselected values,
                 # e.g. '2017-0-23'.
