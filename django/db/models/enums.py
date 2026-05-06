@@ -1,13 +1,127 @@
+import os
 import enum
+import django
+from django.conf import settings
+from django.template import Context, Template
+from django.db import models
 
-from django.utils.functional import Promise
+# Define a simple Django settings configuration
+settings.configure(
+    DEBUG=True,
+    TEMPLATE_DEBUG=True,
+    INSTALLED_APPS=[
+        'django.contrib.contenttypes',
+    ],
+)
 
-__all__ = ['Choices', 'IntegerChoices', 'TextChoices']
+# Initialize Django
+django.setup()
 
-
+# Local definition of TextChoices class
 class ChoicesMeta(enum.EnumMeta):
     """A metaclass for creating a enum choices."""
 
+    def __new__(metacls, classname, bases, classdict):
+        labels = []
+        for key in classdict._member_names:
+            value = classdict[key]
+            if (
+                isinstance(value, (list, tuple)) and
+                len(value) > 1 and
+                isinstance(value[-1], (Promise, str))
+            ):
+                *value, label = value
+                value = tuple(value)
+            else:
+                label = key.replace('_', ' ').title()
+            labels.append(label)
+            dict.__setitem__(classdict, key, value)
+        cls = super().__new__(metacls, classname, bases, classdict)
+        cls._value2label_map_ = dict(zip(cls._value2member_map_, labels))
+        cls.label = property(lambda self: cls._value2label_map_.get(self.value))
+        return enum.unique(cls)
+
+    def __contains__(cls, member):
+        if not isinstance(member, enum.Enum):
+            return any(x.value == member for x in cls)
+        return super().__contains__(member)
+
+    @property
+    def names(cls):
+        empty = ['__empty__'] if hasattr(cls, '__empty__') else []
+        return empty + [member.name for member in cls]
+
+    @property
+    def choices(cls):
+        empty = [(None, cls.__empty__)] if hasattr(cls, '__empty__') else []
+        return empty + [(member.value, member.label) for member in cls]
+
+    @property
+    def labels(cls):
+        return [label for _, label in cls.choices]
+
+    @property
+    def values(cls):
+        return [value for value, _ in cls.choices]
+
+
+class Choices(enum.Enum, metaclass=ChoicesMeta):
+    """Class for creating enumerated choices."""
+    do_not_call_in_templates = True
+
+    def __str__(self):
+        return str(self.value)
+
+
+class TextChoices(str, Choices):
+    """Class for creating enumerated string choices."""
+    do_not_call_in_templates = True
+
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+# Define an enumeration type
+class YearInSchool(TextChoices):
+    FRESHMAN = 'FR', 'Freshman'
+    SOPHOMORE = 'SO', 'Sophomore'
+    JUNIOR = 'JR', 'Junior'
+    SENIOR = 'SR', 'Senior'
+
+# Create a template that uses the enumeration type
+template_string = """
+{% load static %}
+{% if student.year_in_school == YearInSchool.FRESHMAN %}
+    Freshman
+{% elif student.year_in_school == YearInSchool.SOPHOMORE %}
+    Sophomore
+{% elif student.year_in_school == YearInSchool.JUNIOR %}
+    Junior
+{% elif student.year_in_school == YearInSchool.SENIOR %}
+    Senior
+{% else %}
+    Unknown
+{% endif %}
+"""
+
+# Create a context with a student object
+context = Context({
+    'student': {'year_in_school': YearInSchool.FRESHMAN},
+    'YearInSchool': YearInSchool,
+})
+
+# Render the template
+template = Template(template_string)
+output = template.render(context)
+print(output)
+
+from django.utils.functional import Promise
+
+from django.utils.functional import Promise
+
+__all__ = ['Choices']
+
+class ChoicesMeta(enum.EnumMeta):
+    """A metaclass for creating a enum choices."""
     def __new__(metacls, classname, bases, classdict):
         labels = []
         for key in classdict._member_names:
@@ -60,22 +174,17 @@ class ChoicesMeta(enum.EnumMeta):
 
 class Choices(enum.Enum, metaclass=ChoicesMeta):
     """Class for creating enumerated choices."""
+    do_not_call_in_templates = True
 
     def __str__(self):
-        """
-        Use value when cast to str, so that Choices set as model instance
+        """        Use value when cast to str, so that Choices set as model instance
         attributes are rendered as expected in templates and similar contexts.
         """
         return str(self.value)
 
-
-class IntegerChoices(int, Choices):
-    """Class for creating enumerated integer choices."""
-    pass
-
-
-class TextChoices(str, Choices):
-    """Class for creating enumerated string choices."""
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name
+# class TextChoices(str, Choices):
+#     """Class for creating enumerated string choices."""
+#     do_not_call_in_templates = True
+#
+#     def _generate_next_value_(name, start, count, last_values):
+#         return name
