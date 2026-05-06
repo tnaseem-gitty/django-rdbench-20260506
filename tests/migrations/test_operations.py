@@ -18,11 +18,39 @@ class Mixin:
     pass
 
 
-class OperationTests(OperationTestBase):
+    def test_rename_model_with_db_table(self):
+        """
+        Tests the RenameModel operation when db_table is defined.
+        """
+        operation = migrations.RenameModel("Pony", "Horse")
+        project_state = ProjectState()
+        new_state = project_state.clone()
+        project_state.add_model(ModelState("test_rmwdt", "Pony", [("id", models.AutoField(primary_key=True))]))
+        new_state.add_model(ModelState("test_rmwdt", "Horse", [("id", models.AutoField(primary_key=True))]))
+        # Set db_table to the same value to simulate the noop condition
+        project_state.models["test_rmwdt", "Pony"].options["db_table"] = "same_table"
+        new_state.models["test_rmwdt", "Horse"].options["db_table"] = "same_table"
+        # Test the state alteration
+        operation.state_forwards("test_rmwdt", new_state)
+        self.assertIn(("test_rmwdt", "Horse"), new_state.models)
+        self.assertNotIn(("test_rmwdt", "Pony"), new_state.models)
+        # Test the database alteration
+        self.assertTableExists("same_table")
+        with connection.schema_editor() as editor:
+            operation.database_forwards("test_rmwdt", editor, project_state, new_state)
+        self.assertTableExists("same_table")
+        # And test reversal
+        with connection.schema_editor() as editor:
+            operation.database_backwards("test_rmwdt", editor, new_state, project_state)
+        self.assertTableExists("same_table")
+        # And deconstruction
+        definition = operation.deconstruct()
+        self.assertEqual(definition[0], "RenameModel")
+        self.assertEqual(definition[1], [])
+        self.assertEqual(sorted(definition[2]), ["new_name", "old_name"])
     """
     Tests running the operations and making sure they do what they say they do.
-    Each test looks at their state changing, and then their database operation -
-    both forwards and backwards.
+    Each test looks at their state changing, and then their database operation -    both forwards and backwards.
     """
 
     def test_create_model(self):

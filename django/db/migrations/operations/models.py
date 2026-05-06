@@ -320,10 +320,12 @@ class RenameModel(ModelOperation):
         new_model = to_state.apps.get_model(app_label, self.new_name)
         if self.allow_migrate_model(schema_editor.connection.alias, new_model):
             old_model = from_state.apps.get_model(app_label, self.old_name)
+            # Check if db_table is defined and skip renaming if it is
+            if old_model._meta.db_table == new_model._meta.db_table:
+                return
             # Move the main table
             schema_editor.alter_db_table(
-                new_model,
-                old_model._meta.db_table,
+                new_model,                old_model._meta.db_table,
                 new_model._meta.db_table,
             )
             # Alter the fields pointing to us
@@ -366,11 +368,9 @@ class RenameModel(ModelOperation):
                     old_m2m_model._meta.get_field(old_model._meta.model_name),
                     new_m2m_model._meta.get_field(new_model._meta.model_name),
                 )
-
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
         self.new_name_lower, self.old_name_lower = self.old_name_lower, self.new_name_lower
         self.new_name, self.old_name = self.old_name, self.new_name
-
         self.database_forwards(app_label, schema_editor, from_state, to_state)
 
         self.new_name_lower, self.old_name_lower = self.old_name_lower, self.new_name_lower
