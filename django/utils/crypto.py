@@ -34,6 +34,21 @@ def salted_hmac(key_salt, value, secret=None, *, algorithm="sha1"):
         raise InvalidAlgorithm(
             "%r is not an algorithm accepted by the hashlib module." % algorithm
         ) from e
+
+    if hasattr(settings, 'SECRET_KEY_FALLBACKS'):
+        for fallback_secret in settings.SECRET_KEY_FALLBACKS:
+            try:
+                key = hasher(key_salt + force_bytes(fallback_secret)).digest()
+                return hmac.new(key, msg=force_bytes(value), digestmod=hasher)
+            except InvalidAlgorithm:
+                continue
+    key_salt = force_bytes(key_salt)
+    secret = force_bytes(secret)
+    try:
+        hasher = getattr(hashlib, algorithm)
+    except AttributeError as e:        raise InvalidAlgorithm(
+            "%r is not an algorithm accepted by the hashlib module." % algorithm
+        ) from e
     # We need to generate a derived key from our base key.  We can do this by
     # passing the key_salt and our base key through a pseudo-random function.
     key = hasher(key_salt + secret).digest()

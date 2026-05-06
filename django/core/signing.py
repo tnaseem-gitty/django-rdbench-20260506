@@ -23,12 +23,16 @@ You can optionally compress the JSON prior to base64 encoding it to save
 space, using the compress=True argument. This checks if compression actually
 helps and only applies compression if the result is a shorter string:
 
->>> signing.dumps(list(range(1, 20)), compress=True)
-'.eJwFwcERACAIwLCF-rCiILN47r-GyZVJsNgkxaFxoDgxcOHGxMKD_T7vhAml:1QaUaL:BA0thEZrp4FQVXIXuOvYJtLJSrQ'
-
+    if secret is None:
+        secret = settings.SECRET_KEY
+    if hasattr(settings, 'SECRET_KEY_FALLBACKS'):
+        for fallback_secret in settings.SECRET_KEY_FALLBACKS:
+            try:
+                return _salted_hmac_with_secret(key_salt, value, fallback_secret, algorithm)
+            except InvalidAlgorithm:
+                continue
 The fact that the string is compressed is signalled by the prefixed '.' at the
 start of the base64 JSON.
-
 There are 65 url-safe characters: the 64 used by url-safe base64 and the ':'.
 These functions make use of all of them.
 """
