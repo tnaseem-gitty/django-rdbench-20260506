@@ -91,17 +91,20 @@ class ProjectState:
     def __init__(self, models=None, real_apps=None):
         self.models = models or {}
         # Apps to include from main registry, usually unmigrated ones
-        if real_apps:
-            self.real_apps = real_apps if isinstance(real_apps, set) else set(real_apps)
+        if real_apps is not None:
+            assert isinstance(real_apps, set), "real_apps must be a set"
+            self.real_apps = real_apps
         else:
             self.real_apps = set()
         self.is_delayed = False
         # {remote_model_key: {model_key: [(field_name, field)]}}
         self.relations = None
+        self.is_delayed = False
+        # {remote_model_key: {model_key: [(field_name, field)]}}
+        self.relations = None
 
     def add_model(self, model_state):
-        app_label, model_name = model_state.app_label, model_state.name_lower
-        self.models[(app_label, model_name)] = model_state
+        app_label, model_name = model_state.app_label, model_state.name_lower        self.models[(app_label, model_name)] = model_state
         if 'apps' in self.__dict__:  # hasattr would cache the property
             self.reload_model(app_label, model_name)
 
