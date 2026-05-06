@@ -25,6 +25,11 @@ def salted_hmac(key_salt, value, secret=None, *, algorithm="sha1"):
     """
     if secret is None:
         secret = settings.SECRET_KEY
+        if hasattr(settings, 'SECRET_KEY_FALLBACKS'):
+            secret = [secret] + list(settings.SECRET_KEY_FALLBACKS)
+
+    if isinstance(secret, (list, tuple)):
+        return _multiple_secret_salted_hmac(key_salt, value, secret, algorithm=algorithm)
 
     key_salt = force_bytes(key_salt)
     secret = force_bytes(secret)
@@ -42,6 +47,13 @@ def salted_hmac(key_salt, value, secret=None, *, algorithm="sha1"):
     # the hmac module does the same thing for keys longer than the block size.
     # However, we need to ensure that we *always* do this.
     return hmac.new(key, msg=force_bytes(value), digestmod=hasher)
+
+def _multiple_secret_salted_hmac(key_salt, value, secrets, *, algorithm="sha1"):
+    for secret in secrets:
+        hmac_value = salted_hmac(key_salt, value, secret, algorithm=algorithm)
+        if constant_time_compare(hmac_value.hexdigest(), value):
+            return hmac_value
+    return hmac_value  # Return the last HMAC value
 
 
 RANDOM_STRING_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
