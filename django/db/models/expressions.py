@@ -390,10 +390,9 @@ class BaseExpression:
         return sql, params
 
 
-@deconstructible
+@deconstructible(path='django.db.models.Expression')
 class Expression(BaseExpression, Combinable):
     """An expression that can be combined with other expressions."""
-
     @cached_property
     def identity(self):
         constructor_signature = inspect.signature(self.__init__)
@@ -442,10 +441,10 @@ def _resolve_combined_type(connector, lhs_type, rhs_type):
             return combined_type
 
 
+@deconstructible(path='django.db.models.CombinedExpression')
 class CombinedExpression(SQLiteNumericMixin, Expression):
 
-    def __init__(self, lhs, connector, rhs, output_field=None):
-        super().__init__(output_field=output_field)
+    def __init__(self, lhs, connector, rhs, output_field=None):        super().__init__(output_field=output_field)
         self.connector = connector
         self.lhs = lhs
         self.rhs = rhs
@@ -517,10 +516,10 @@ class CombinedExpression(SQLiteNumericMixin, Expression):
         return c
 
 
+@deconstructible(path='django.db.models.DurationExpression')
 class DurationExpression(CombinedExpression):
     def compile(self, side, compiler, connection):
-        try:
-            output = side.output_field
+        try:            output = side.output_field
         except FieldError:
             pass
         else:
@@ -565,9 +564,9 @@ class DurationExpression(CombinedExpression):
         return sql, params
 
 
+@deconstructible(path='django.db.models.TemporalSubtraction')
 class TemporalSubtraction(CombinedExpression):
     output_field = fields.DurationField()
-
     def __init__(self, lhs, rhs):
         super().__init__(lhs, self.SUB, rhs)
 
@@ -651,10 +650,10 @@ class OuterRef(F):
         return self
 
 
+@deconstructible(path='django.db.models.Func')
 class Func(SQLiteNumericMixin, Expression):
     """An SQL function call."""
-    function = None
-    template = '%(function)s(%(expressions)s)'
+    function = None    template = '%(function)s(%(expressions)s)'
     arg_joiner = ', '
     arity = None  # The number of arguments the function accepts.
 
@@ -731,10 +730,10 @@ class Func(SQLiteNumericMixin, Expression):
         return copy
 
 
+@deconstructible(path='django.db.models.Value')
 class Value(SQLiteNumericMixin, Expression):
     """Represent a wrapped value as a node within an expression."""
-    # Provide a default value for `for_save` in order to allow unresolved
-    # instances to be compiled until a decision is taken in #25425.
+    # Provide a default value for `for_save` in order to allow unresolved    # instances to be compiled until a decision is taken in #25425.
     for_save = False
 
     def __init__(self, value, output_field=None):
@@ -806,11 +805,10 @@ class Value(SQLiteNumericMixin, Expression):
     def empty_result_set_value(self):
         return self.value
 
-
+@deconstructible(path='django.db.models.RawSQL')
 class RawSQL(Expression):
     def __init__(self, sql, params, output_field=None):
-        if output_field is None:
-            output_field = fields.Field()
+        if output_field is None:            output_field = fields.Field()
         self.sql, self.params = sql, params
         super().__init__(output_field=output_field)
 
@@ -834,18 +832,18 @@ class RawSQL(Expression):
         return super().resolve_expression(query, allow_joins, reuse, summarize, for_save)
 
 
+@deconstructible(path='django.db.models.Star')
 class Star(Expression):
     def __repr__(self):
         return "'*'"
-
     def as_sql(self, compiler, connection):
         return '*', []
 
 
+@deconstructible(path='django.db.models.Col')
 class Col(Expression):
 
-    contains_column_references = True
-    possibly_multivalued = False
+    contains_column_references = True    possibly_multivalued = False
 
     def __init__(self, alias, target, output_field=None):
         if output_field is None:
@@ -879,10 +877,10 @@ class Col(Expression):
                 self.target.get_db_converters(connection))
 
 
+@deconstructible(path='django.db.models.Ref')
 class Ref(Expression):
     """
-    Reference to column alias of the query. For example, Ref('sum_cost') in
-    qs.annotate(sum_cost=Sum('cost')) query.
+    Reference to column alias of the query. For example, Ref('sum_cost') in    qs.annotate(sum_cost=Sum('cost')) query.
     """
     def __init__(self, refs, source):
         super().__init__()
@@ -953,10 +951,10 @@ class OrderByList(Func):
         return super().as_sql(*args, **kwargs)
 
 
+@deconstructible(path='django.db.models.ExpressionWrapper')
 class ExpressionWrapper(SQLiteNumericMixin, Expression):
     """
-    An expression that can wrap another expression so that it can provide
-    extra context to the inner expression, such as the output_field.
+    An expression that can wrap another expression so that it can provide    extra context to the inner expression, such as the output_field.
     """
 
     def __init__(self, expression, output_field):
@@ -985,10 +983,10 @@ class ExpressionWrapper(SQLiteNumericMixin, Expression):
         return "{}({})".format(self.__class__.__name__, self.expression)
 
 
+@deconstructible(path='django.db.models.When')
 class When(Expression):
     template = 'WHEN %(condition)s THEN %(result)s'
-    # This isn't a complete conditional expression, must be used in Case().
-    conditional = False
+    # This isn't a complete conditional expression, must be used in Case().    conditional = False
 
     def __init__(self, condition=None, then=None, **lookups):
         if lookups:
@@ -1052,10 +1050,10 @@ class When(Expression):
         return cols
 
 
+@deconstructible(path='django.db.models.Case')
 class Case(SQLiteNumericMixin, Expression):
     """
     An SQL searched CASE expression:
-
         CASE
             WHEN n > 0
                 THEN 'positive'
@@ -1225,10 +1223,10 @@ class Exists(Subquery):
         return sql, params
 
 
+@deconstructible(path='django.db.models.OrderBy')
 class OrderBy(Expression):
     template = '%(expression)s %(ordering)s'
     conditional = False
-
     def __init__(self, expression, descending=False, nulls_first=False, nulls_last=False):
         if nulls_first and nulls_last:
             raise ValueError('nulls_first and nulls_last are mutually exclusive')
@@ -1307,10 +1305,10 @@ class OrderBy(Expression):
         self.descending = True
 
 
+@deconstructible(path='django.db.models.Window')
 class Window(SQLiteNumericMixin, Expression):
     template = '%(expression)s OVER (%(window)s)'
-    # Although the main expression may either be an aggregate or an
-    # expression with an aggregate function, the GROUP BY that will
+    # Although the main expression may either be an aggregate or an    # expression with an aggregate function, the GROUP BY that will
     # be introduced in the query as a result is not desired.
     contains_aggregate = False
     contains_over_clause = True
@@ -1412,10 +1410,10 @@ class Window(SQLiteNumericMixin, Expression):
         return []
 
 
+@deconstructible(path='django.db.models.WindowFrame')
 class WindowFrame(Expression):
     """
-    Model the frame clause in window expressions. There are two types of frame
-    clauses which are subclasses, however, all processing and validation (by no
+    Model the frame clause in window expressions. There are two types of frame    clauses which are subclasses, however, all processing and validation (by no
     means intended to be complete) is done here. Thus, providing an end for a
     frame is optional (the default is UNBOUNDED FOLLOWING, which is the last
     row in the frame).
@@ -1471,15 +1469,15 @@ class WindowFrame(Expression):
         raise NotImplementedError('Subclasses must implement window_frame_start_end().')
 
 
+@deconstructible(path='django.db.models.RowRange')
 class RowRange(WindowFrame):
     frame_type = 'ROWS'
-
     def window_frame_start_end(self, connection, start, end):
         return connection.ops.window_frame_rows_start_end(start, end)
 
 
+@deconstructible(path='django.db.models.ValueRange')
 class ValueRange(WindowFrame):
     frame_type = 'RANGE'
-
     def window_frame_start_end(self, connection, start, end):
         return connection.ops.window_frame_range_start_end(start, end)
