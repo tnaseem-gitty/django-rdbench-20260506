@@ -1169,46 +1169,58 @@ class MigrationAutodetector:
                 )
 
     def _generate_removed_altered_foo_together(self, operation):
+        combined_operations = {}
         for (
             old_value,
-            new_value,
-            app_label,
+            new_value,            app_label,
             model_name,
             dependencies,
         ) in self._get_altered_foo_together_operations(operation.option_name):
-            removal_value = new_value.intersection(old_value)
-            if removal_value or old_value:
+            if (app_label, model_name) not in combined_operations:
+                combined_operations[(app_label, model_name)] = {
+                    "old_value": set(),
+                    "new_value": set(),
+                    "dependencies": dependencies,
+                }
+            combined_operations[(app_label, model_name)]["old_value"].update(old_value)
+            combined_operations[(app_label, model_name)]["new_value"].update(new_value)
+
+        for (app_label, model_name), values in combined_operations.items():
+            removal_value = values["new_value"].intersection(values["old_value"])
+            if removal_value or values["old_value"]:
                 self.add_operation(
                     app_label,
                     operation(name=model_name, **{operation.option_name: removal_value}),
-                    dependencies=dependencies,
+                    dependencies=values["dependencies"],
                 )
 
-    def generate_removed_altered_unique_together(self):
-        self._generate_removed_altered_foo_together(operations.AlterUniqueTogether)
-
-    def generate_removed_altered_index_together(self):
-        self._generate_removed_altered_foo_together(operations.AlterIndexTogether)
-
     def _generate_altered_foo_together(self, operation):
+        combined_operations = {}
         for (
             old_value,
-            new_value,
-            app_label,
+            new_value,            app_label,
             model_name,
             dependencies,
         ) in self._get_altered_foo_together_operations(operation.option_name):
-            removal_value = new_value.intersection(old_value)
-            if new_value != removal_value:
+            if (app_label, model_name) not in combined_operations:
+                combined_operations[(app_label, model_name)] = {
+                    "old_value": set(),
+                    "new_value": set(),
+                    "dependencies": dependencies,
+                }
+            combined_operations[(app_label, model_name)]["old_value"].update(old_value)
+            combined_operations[(app_label, model_name)]["new_value"].update(new_value)
+
+        for (app_label, model_name), values in combined_operations.items():
+            removal_value = values["new_value"].intersection(values["old_value"])
+            if values["new_value"] != removal_value:
                 self.add_operation(
                     app_label,
-                    operation(name=model_name, **{operation.option_name: new_value}),
-                    dependencies=dependencies,
+                    operation(name=model_name, **{operation.option_name: values["new_value"]}),
+                    dependencies=values["dependencies"],
                 )
-
     def generate_altered_unique_together(self):
         self._generate_altered_foo_together(operations.AlterUniqueTogether)
-
     def generate_altered_index_together(self):
         self._generate_altered_foo_together(operations.AlterIndexTogether)
 
