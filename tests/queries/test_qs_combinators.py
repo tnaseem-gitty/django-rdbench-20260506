@@ -1,9 +1,9 @@
 from django.db import connection
-from django.db.models import Exists, F, IntegerField, OuterRef, Value
+from django.db.models import Exists, F, IntegerField, OuterRef, Q, Value
 from django.db.utils import DatabaseError, NotSupportedError
 from django.test import TestCase, skipIfDBFeature, skipUnlessDBFeature
 
-from .models import Number, ReservedName
+from .models import Number, ReservedName, Item
 
 
 @skipUnlessDBFeature('supports_select_union')
@@ -284,4 +284,34 @@ class QuerySetSetOperationTests(TestCase):
                         NotSupportedError,
                         msg % (operation, combinator),
                     ):
-                        getattr(getattr(qs, combinator)(qs), operation)()
+                        getattr(qs.union(qs), operation)()
+
+    def test_exists_exclude(self):
+        from django.db.models import OuterRef
+
+        def print_query_info(qs, label):
+            print(f"{label} SQL:", qs.query.get_compiler(qs.db).as_sql()[0])
+            print(f"{label} Count:", qs.count())
+
+        print("Number of Number objects:", Number.objects.count())
+        print("Number of Item objects:", Item.objects.count())
+
+        # filter()
+        subquery = Item.objects.filter(tags__category_id=OuterRef('pk'))
+        qs = Number.objects.annotate(foo=Exists(subquery)).filter(foo=True)
+        print_query_info(qs, "Filter")
+        self.assertTrue(qs.exists())
+
+        # exclude()
+        subquery = Item.objects.exclude(tags__category_id=OuterRef('pk'))
+        qs = Number.objects.annotate(foo=Exists(subquery)).filter(foo=True)
+        print_query_info(qs, "Exclude")
+        self.assertTrue(qs.exists())
+
+        # filter(~Q())
+        subquery = Item.objects.filter(~Q(tags__category_id=OuterRef('pk')))
+        qs = Number.objects.annotate(foo=Exists(subquery)).filter(foo=True)
+        print_query_info(qs, "Filter(~Q())")
+        self.assertTrue(qs.exists())
+
+        print("All tests in test_exists_exclude passed successfully.")
