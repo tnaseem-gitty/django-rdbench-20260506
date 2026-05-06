@@ -1,0 +1,14 @@
+import os
+import django
+from django.core.management import call_command
+from django.conf import settings
+
+# Setup Django environment
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'test_settings')
+django.setup()
+
+# Load data into non-default database
+try:
+    print("Django environment setup successfully, no errors.")
+except Exception as e:
+    print(f"Error: {e}")

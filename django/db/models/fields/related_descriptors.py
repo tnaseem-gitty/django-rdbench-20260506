@@ -163,10 +163,9 @@ class ForwardManyToOneDescriptor:
         )
 
     def get_object(self, instance):
-        qs = self.get_queryset(instance=instance)
+        qs = self.get_queryset(instance=instance).using(instance._state.db)
         # Assuming the database enforces foreign keys, this won't fail.
         return qs.get(self.field.get_reverse_related_filter(instance))
-
     def __get__(self, instance, cls=None):
         """
         Get the related instance through the forward relation.
