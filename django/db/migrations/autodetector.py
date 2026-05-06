@@ -819,17 +819,22 @@ class MigrationAutodetector:
             )
 
     def generate_renamed_fields(self):
-        """Work out renamed fields."""
+        """
+        Work out renamed fields.
+        Note: Simultaneously renaming a model and a field can potentially cause issues.
+        If you encounter any problems, try separating these operations into different migrations.
+        """
         self.renamed_fields = {}
         for app_label, model_name, field_name in sorted(self.new_field_keys - self.old_field_keys):
             old_model_name = self.renamed_models.get((app_label, model_name), model_name)
             old_model_state = self.from_state.models[app_label, old_model_name]
-            new_model_state = self.to_state.models[app_label, old_model_name]
+            new_model_state = self.to_state.models[app_label, model_name]
             field = new_model_state.get_field(field_name)
             # Scan to see if this is actually a rename!
             field_dec = self.deep_deconstruct(field)
             for rem_app_label, rem_model_name, rem_field_name in sorted(self.old_field_keys - self.new_field_keys):
-                if rem_app_label == app_label and rem_model_name == model_name:
+                old_rem_model_name = self.renamed_models.get((rem_app_label, model_name), rem_model_name)
+                if rem_app_label == app_label and old_rem_model_name == old_model_name:
                     old_field = old_model_state.get_field(rem_field_name)
                     old_field_dec = self.deep_deconstruct(old_field)
                     if field.remote_field and field.remote_field.model and 'to' in old_field_dec[2]:
@@ -853,7 +858,7 @@ class MigrationAutodetector:
                                 self.add_operation(
                                     app_label,
                                     operations.AlterField(
-                                        model_name=model_name,
+                                        model_name=old_model_name,
                                         name=rem_field_name,
                                         field=altered_field,
                                     ),
@@ -861,7 +866,7 @@ class MigrationAutodetector:
                             self.add_operation(
                                 app_label,
                                 operations.RenameField(
-                                    model_name=model_name,
+                                    model_name=old_model_name,
                                     old_name=rem_field_name,
                                     new_name=field_name,
                                 )
