@@ -1126,6 +1126,16 @@ class Queries2Tests(TestCase):
     def setUpTestData(cls):
         cls.num4 = Number.objects.create(num=4)
         cls.num8 = Number.objects.create(num=8)
+
+    def test_exists_subquery_with_empty_queryset(self):
+        qs = Item.objects.filter(~Exists(Item.objects.none()), name='test')
+        self.assertIn('NOT (EXISTS (SELECT 1 FROM', str(qs.query))
+        self.assertIn('WHERE 1=0', str(qs.query))
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.num4 = Number.objects.create(num=4)
+        cls.num8 = Number.objects.create(num=8)
         cls.num12 = Number.objects.create(num=12)
 
     def test_ticket4289(self):

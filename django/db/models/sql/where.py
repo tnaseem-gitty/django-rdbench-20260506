@@ -63,12 +63,6 @@ class WhereNode(tree.Node):
         return where_node, having_node
 
     def as_sql(self, compiler, connection):
-        """
-        Return the SQL version of the where clause and the value to be
-        substituted in. Return '', [] if this node matches everything,
-        None, [] if this node is empty, and raise EmptyResultSet if this
-        node can't match anything.
-        """
         result = []
         result_params = []
         if self.connector == AND:
@@ -76,26 +70,25 @@ class WhereNode(tree.Node):
         else:
             full_needed, empty_needed = 1, len(self.children)
 
+        all_empty = True
         for child in self.children:
             try:
                 sql, params = compiler.compile(child)
             except EmptyResultSet:
                 empty_needed -= 1
             else:
+                all_empty = False
                 if sql:
                     result.append(sql)
                     result_params.extend(params)
                 else:
                     full_needed -= 1
-            # Check if this node matches nothing or everything.
-            # First check the amount of full nodes and empty nodes
-            # to make this node empty/full.
-            # Now, check if this node is full/empty using the
-            # counts.
             if empty_needed == 0:
                 if self.negated:
                     return '', []
                 else:
+                    if all_empty:
+                        return '1=0', []  # Always false condition
                     raise EmptyResultSet
             if full_needed == 0:
                 if self.negated:
@@ -106,9 +99,6 @@ class WhereNode(tree.Node):
         sql_string = conn.join(result)
         if sql_string:
             if self.negated:
-                # Some backends (Oracle at least) need parentheses
-                # around the inner SQL in the negated case, even if the
-                # inner SQL contains just a single expression.
                 sql_string = 'NOT (%s)' % sql_string
             elif len(result) > 1 or self.resolved:
                 sql_string = '(%s)' % sql_string
