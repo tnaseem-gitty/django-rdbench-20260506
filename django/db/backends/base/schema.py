@@ -407,10 +407,12 @@ class BaseDatabaseSchemaEditor:
             model, columns, exclude=meta_constraint_names | meta_index_names,
             **constraint_kwargs
         )
+        if len(constraint_names) > 1:
+            # Filter out the unique constraint if both unique and index constraints exist
+            constraint_names = [name for name in constraint_names if not name.endswith('_uniq')]
         if len(constraint_names) != 1:
             raise ValueError("Found wrong number (%s) of constraints for %s(%s)" % (
-                len(constraint_names),
-                model._meta.db_table,
+                len(constraint_names),                model._meta.db_table,
                 ", ".join(columns),
             ))
         self.execute(self._delete_constraint_sql(sql, model, constraint_names[0]))
