@@ -407,13 +407,10 @@ class BaseDatabaseSchemaEditor:
             model, columns, exclude=meta_constraint_names | meta_index_names,
             **constraint_kwargs
         )
-        if len(constraint_names) != 1:
-            raise ValueError("Found wrong number (%s) of constraints for %s(%s)" % (
-                len(constraint_names),
-                model._meta.db_table,
-                ", ".join(columns),
-            ))
-        self.execute(self._delete_constraint_sql(sql, model, constraint_names[0]))
+        if not constraint_names:
+            return  # No matching constraints found, nothing to do
+        for constraint_name in constraint_names:
+            self.execute(self._delete_constraint_sql(sql, model, constraint_name))
 
     def alter_db_table(self, model, old_db_table, new_db_table):
         """Rename the table a model points to."""
