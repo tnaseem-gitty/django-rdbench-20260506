@@ -1073,11 +1073,10 @@ class Query(BaseExpression):
                         ))
                 else:
                     resolved_values.append(sub_value)
-            value = tuple(resolved_values)
+            value = type(value)(resolved_values)
         return value
 
-    def solve_lookup_type(self, lookup):
-        """
+    def solve_lookup_type(self, lookup):        """
         Solve the lookup type from the lookup (e.g.: 'foobar__id__icontains').
         """
         lookup_splitted = lookup.split(LOOKUP_SEP)
