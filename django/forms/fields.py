@@ -200,8 +200,8 @@ class Field:
         memo[id(self)] = result
         result.widget = copy.deepcopy(self.widget, memo)
         result.validators = self.validators[:]
+        result.error_messages = copy.deepcopy(self.error_messages, memo)
         return result
-
 
 class CharField(Field):
     def __init__(self, *, max_length=None, min_length=None, strip=True, empty_value='', **kwargs):
