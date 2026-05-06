@@ -1,6 +1,8 @@
 import copy
+import functools
 import inspect
 from importlib import import_module
+
 
 from django.db import router
 from django.db.models.query import QuerySet
@@ -81,11 +83,9 @@ class BaseManager:
     @classmethod
     def _get_queryset_methods(cls, queryset_class):
         def create_method(name, method):
+            @functools.wraps(method)
             def manager_method(self, *args, **kwargs):
                 return getattr(self.get_queryset(), name)(*args, **kwargs)
-
-            manager_method.__name__ = method.__name__
-            manager_method.__doc__ = method.__doc__
             return manager_method
 
         new_methods = {}
