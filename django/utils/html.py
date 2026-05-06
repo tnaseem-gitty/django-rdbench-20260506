@@ -283,11 +283,14 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
             middle_unescaped = html.unescape(middle)
             stripped = middle_unescaped.rstrip(TRAILING_PUNCTUATION_CHARS)
             if middle_unescaped != stripped:
-                trail = middle[len(stripped):] + trail
-                middle = middle[:len(stripped) - len(middle_unescaped)]
+                trail = middle[len(middle) - len(middle_unescaped) + len(stripped):] + trail
+                middle = middle[:len(middle) - len(middle_unescaped) + len(stripped)]
+                trimmed_something = True
+                trimmed_something = True
+                trimmed_something = True
+                trimmed_something = True
                 trimmed_something = True
         return lead, middle, trail
-
     def is_email_simple(value):
         """Return True if value looks like an email address."""
         # An @ must be in the middle of the value.
@@ -302,20 +305,19 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
         if '.' not in p2 or p2.startswith('.'):
             return False
         return True
-
     words = word_split_re.split(str(text))
     for i, word in enumerate(words):
+        print(f"Processing word: {word}")
         if '.' in word or '@' in word or ':' in word:
             # lead: Current punctuation trimmed from the beginning of the word.
-            # middle: Current state of the word.
-            # trail: Current punctuation trimmed from the end of the word.
+            # middle: Current state of the word.            # trail: Current punctuation trimmed from the end of the word.
             lead, middle, trail = '', word, ''
             # Deal with punctuation.
             lead, middle, trail = trim_punctuation(lead, middle, trail)
+            print(f"After trim_punctuation: lead={lead}, middle={middle}, trail={trail}")
 
             # Make URL we want to point to.
-            url = None
-            nofollow_attr = ' rel="nofollow"' if nofollow else ''
+            url = None            nofollow_attr = ' rel="nofollow"' if nofollow else ''
             if simple_url_re.match(middle):
                 url = smart_urlquote(html.unescape(middle))
             elif simple_url_2_re.match(middle):
@@ -337,20 +339,20 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
                     trimmed = escape(trimmed)
                 middle = '<a href="%s"%s>%s</a>' % (escape(url), nofollow_attr, trimmed)
                 words[i] = mark_safe('%s%s%s' % (lead, middle, trail))
+                print(f"URL created: {words[i]}")
             else:
                 if safe_input:
-                    words[i] = mark_safe(word)
-                elif autoescape:
+                    words[i] = mark_safe(word)                elif autoescape:
                     words[i] = escape(word)
         elif safe_input:
             words[i] = mark_safe(word)
         elif autoescape:
             words[i] = escape(word)
     return ''.join(words)
+    return ''.join(words)
 
 
-def avoid_wrapping(value):
-    """
+def avoid_wrapping(value):    """
     Avoid text wrapping in the middle of a phrase by adding non-breaking
     spaces where there previously were normal spaces.
     """
