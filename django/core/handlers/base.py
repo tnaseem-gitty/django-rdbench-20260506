@@ -51,15 +51,15 @@ class BaseHandler:
                 middleware_is_async = middleware_can_async
             try:
                 # Adapt handler, if needed.
+                # Adapt handler, if needed.
+                mw_instance = middleware(handler)
                 handler = self.adapt_method_mode(
                     middleware_is_async, handler, handler_is_async,
                     debug=settings.DEBUG, name='middleware %s' % middleware_path,
                 )
-                mw_instance = middleware(handler)
             except MiddlewareNotUsed as exc:
                 if settings.DEBUG:
-                    if str(exc):
-                        logger.debug('MiddlewareNotUsed(%r): %s', middleware_path, exc)
+                    if str(exc):                        logger.debug('MiddlewareNotUsed(%r): %s', middleware_path, exc)
                     else:
                         logger.debug('MiddlewareNotUsed: %r', middleware_path)
                 continue
