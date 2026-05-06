@@ -963,10 +963,11 @@ class RenameIndex(IndexOperation):
 
         to_model_state = to_state.models[app_label, self.model_name_lower]
         new_index = to_model_state.get_index_by_name(self.new_name)
+        if schema_editor._constraint_names(model, index=True).count(self.new_name) > 0:
+            return  # Skip renaming if the new index name already exists
         schema_editor.rename_index(model, old_index, new_index)
 
-    def database_backwards(self, app_label, schema_editor, from_state, to_state):
-        if self.old_fields:
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):        if self.old_fields:
             # Backward operation with unnamed index is a no-op.
             return
 

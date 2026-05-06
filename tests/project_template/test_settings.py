@@ -1,10 +1,17 @@
 import os
 import shutil
 import tempfile
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 from django import conf
-from django.test import SimpleTestCase
-from django.test.utils import extend_sys_path
+from django.test import SimpleTestCasefrom django.test.utils import extend_sys_path
 
 
 class TestStartProjectSettings(SimpleTestCase):
@@ -46,3 +53,7 @@ class TestStartProjectSettings(SimpleTestCase):
                     b"X-Frame-Options: DENY",
                 ],
             )
+INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'tests.migrations',
+]
