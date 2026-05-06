@@ -441,8 +441,10 @@ class ImageField(FileField):
         # after their corresponding image field don't stay cleared by
         # Model.__init__, see bug #11196.
         # Only run post-initialization dimension update on non-abstract models
-        if not cls._meta.abstract:
+        # and only if width_field or height_field is set
+        if not cls._meta.abstract and (self.width_field or self.height_field):
             signals.post_init.connect(self.update_dimension_fields, sender=cls)
+            setattr(cls, '_image_field_signal_connected', True)
 
     def update_dimension_fields(self, instance, force=False, *args, **kwargs):
         """
