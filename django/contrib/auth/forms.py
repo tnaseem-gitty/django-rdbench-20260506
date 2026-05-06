@@ -56,6 +56,9 @@ class ReadOnlyPasswordHashField(forms.Field):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("required", False)
+        # Set disabled to True by default to prevent accidental password changes
+        # This eliminates the need for a clean_password method in forms using this field
+        kwargs.setdefault("disabled", True)
         super().__init__(*args, **kwargs)
 
     def bound_data(self, data, initial):
