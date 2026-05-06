@@ -939,14 +939,19 @@ class Model(metaclass=ModelBase):
     delete.alters_data = True
 
     def _get_FIELD_display(self, field):
+        custom_method = f'get_{field.name}_display'
+        if hasattr(self, custom_method):
+            return getattr(self, custom_method)()
         value = getattr(self, field.attname)
         # force_str() to coerce lazy strings.
         return force_str(dict(field.flatchoices).get(value, value), strings_only=True)
-
+        # force_str() to coerce lazy strings.
+        return force_str(dict(field.flatchoices).get(value, value), strings_only=True)
+        # force_str() to coerce lazy strings.
+        return force_str(dict(field.flatchoices).get(value, value), strings_only=True)
     def _get_next_or_previous_by_FIELD(self, field, is_next, **kwargs):
         if not self.pk:
-            raise ValueError("get_next/get_previous cannot be used on unsaved objects.")
-        op = 'gt' if is_next else 'lt'
+            raise ValueError("get_next/get_previous cannot be used on unsaved objects.")        op = 'gt' if is_next else 'lt'
         order = '' if is_next else '-'
         param = getattr(self, field.attname)
         q = Q(**{'%s__%s' % (field.name, op): param})
