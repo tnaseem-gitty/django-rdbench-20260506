@@ -69,4 +69,5 @@ urlpatterns += [
     # Patterns to test the technical 404.
     re_path(r'^regex-post/(?P<pk>[0-9]+)/$', views.index_page, name='regex-post'),
     path('path-post/<int:pk>/', views.index_page, name='path-post'),
+    path('raises_suppressed_context/', views.raises_suppressed_context, name='raises_suppressed_context'),
 ]

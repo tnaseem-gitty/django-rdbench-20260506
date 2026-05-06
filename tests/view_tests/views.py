@@ -291,3 +291,9 @@ def json_response_view(request):
         'timestamp': datetime.datetime(2013, 5, 19, 20),
         'value': decimal.Decimal('3.14'),
     })
+
+def raises_suppressed_context(request):
+    try:
+        raise RuntimeError('my error')
+    except Exception:
+        raise ValueError('my new error') from None

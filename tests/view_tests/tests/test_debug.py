@@ -292,6 +292,12 @@ class DebugViewTests(SimpleTestCase):
         with self.assertLogs('django.request', 'ERROR'):
             response = self.client.get('/raises500/')
         self.assertContains(response, 'custom traceback text', status_code=500)
+    def test_suppress_context_respected(self):
+        with self.assertRaises(ValueError) as cm:
+            self.client.get('/raises_suppressed_context/')
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertIsNotNone(cm.exception.__context__)
+        self.assertTrue(cm.exception.__suppress_context__)
 
 
 class DebugViewQueriesAllowedTests(SimpleTestCase):
