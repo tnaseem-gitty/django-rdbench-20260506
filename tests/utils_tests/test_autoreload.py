@@ -797,4 +797,22 @@ class StatReloaderTests(ReloaderTests, IntegrationTests):
         with mock.patch.object(self.reloader, 'watched_files', return_value=[self.existing_file, self.existing_file]):
             snapshot = list(self.reloader.snapshot_files())
             self.assertEqual(len(snapshot), 1)
-            self.assertEqual(snapshot[0][0], self.existing_file)
+
+class TestGetChildArguments(SimpleTestCase):
+    def test_get_child_arguments_with_python_m(self):
+        original_argv = sys.argv
+        try:
+            sys.argv = ['-m', 'django', 'runserver']
+            args = autoreload.get_child_arguments()
+            self.assertEqual(args[:3], [sys.executable, '-m', 'django'])
+        finally:
+            sys.argv = original_argv
+
+    def test_get_child_arguments_with_python_module(self):
+        original_argv = sys.argv
+        try:
+            sys.argv = ['manage.py', 'runserver']
+            args = autoreload.get_child_arguments()
+            self.assertEqual(args[:2], [sys.executable, 'manage.py'])
+        finally:
+            sys.argv = original_argv

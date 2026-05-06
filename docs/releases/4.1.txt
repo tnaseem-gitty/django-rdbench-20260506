@@ -1,0 +1,43 @@
+============================================
+Django 4.1 release notes - UNDER DEVELOPMENT
+============================================
+
+*Expected August 2022*
+
+Welcome to Django 4.1!
+
+These release notes cover the new features, as well as some backwards
+incompatible changes you'll want to be aware of when upgrading from Django 4.0
+or earlier. We've begun the deprecation process for some features.
+
+See the :doc:`/howto/upgrade-version` guide if you're updating an existing
+project.
+
+Python compatibility
+====================
+
+Django 4.1 supports Python 3.8, 3.9, and 3.10. We **highly recommend** and only
+officially support the latest release of each series.
+
+What's new in Django 4.1
+========================
+
+Minor features
+--------------
+
+:mod:`django.utils.autoreload`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* The :func:`~django.utils.autoreload.get_child_arguments` function now
+  correctly handles the case when Django is started using `python -m`, allowing
+  proper autoreloading for both package and standalone module execution.
+
+Backwards incompatible changes in 4.1
+=====================================
+
+Database backend API
+--------------------
+
+This section describes changes that may be needed in third-party database
+backends.
+
