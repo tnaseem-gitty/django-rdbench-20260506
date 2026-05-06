@@ -30,11 +30,10 @@ from django.core.handlers.wsgi import WSGIHandler, get_path_info
 from django.core.management import call_command
 from django.core.management.color import no_style
 from django.core.management.sql import emit_post_migrate_signal
-from django.core.servers.basehttp import ThreadedWSGIServer, WSGIRequestHandler
+from django.core.servers.basehttp import ThreadedWSGIServer, WSGIRequestHandler, WSGIServer
 from django.db import DEFAULT_DB_ALIAS, connection, connections, transaction
 from django.forms.fields import CharField
-from django.http import QueryDict
-from django.http.request import split_domain_port, validate_host
+from django.http import QueryDictfrom django.http.request import split_domain_port, validate_host
 from django.test.client import AsyncClient, Client
 from django.test.html import HTMLParseError, parse_html
 from django.test.signals import setting_changed, template_rendered
@@ -1527,11 +1526,12 @@ class LiveServerThread(threading.Thread):
             self.httpd.server_close()
         self.join()
 
-
+class NonThreadedLiveServerThread(LiveServerThread):
+    def _create_server(self):
+        return WSGIServer((self.host, self.port), QuietWSGIRequestHandler, allow_reuse_address=False)
 class LiveServerTestCase(TransactionTestCase):
     """
-    Do basically the same as TransactionTestCase but also launch a live HTTP
-    server in a separate thread so that the tests may use another testing
+    Do basically the same as TransactionTestCase but also launch a live HTTP    server in a separate thread so that the tests may use another testing
     framework, such as Selenium for example, instead of the built-in dummy
     client.
     It inherits from TransactionTestCase instead of TestCase because the
@@ -1541,11 +1541,10 @@ class LiveServerTestCase(TransactionTestCase):
     """
     host = 'localhost'
     port = 0
-    server_thread_class = LiveServerThread
+    server_thread_class = NonThreadedLiveServerThread
     static_handler = _StaticFilesHandler
 
-    @classproperty
-    def live_server_url(cls):
+    @classproperty    def live_server_url(cls):
         return 'http://%s:%s' % (cls.host, cls.server_thread.port)
 
     @classproperty
