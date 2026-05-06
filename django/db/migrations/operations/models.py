@@ -137,15 +137,19 @@ class CreateModel(ModelOperation):
                 ),
             ]
         elif isinstance(operation, AlterModelOptions) and self.name_lower == operation.name_lower:
+            new_options = self.options.copy()
+            for key in list(new_options.keys()):
+                if key not in operation.options:
+                    del new_options[key]
+            new_options.update(operation.options)
             return [
                 CreateModel(
                     self.name,
                     fields=self.fields,
-                    options={**self.options, **operation.options},
+                    options=new_options,
                     bases=self.bases,
                     managers=self.managers,
-                ),
-            ]
+                ),            ]
         elif isinstance(operation, AlterTogetherOptionOperation) and self.name_lower == operation.name_lower:
             return [
                 CreateModel(

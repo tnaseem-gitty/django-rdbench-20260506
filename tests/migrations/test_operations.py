@@ -3427,10 +3427,33 @@ class SwappableOperationTests(OperationTestBase):
         with connection.schema_editor() as editor:
             operation.database_forwards('test_rminigsw', editor, project_state, new_state)
             operation.database_backwards('test_rminigsw', editor, new_state, project_state)
+    def test_create_model_with_altered_options(self):
+        """
+        Tests that CreateModel operation correctly handles AlterModelOptions.
+        """
+        project_state = ProjectState()
+        
+        # Create the model
+        create_operation = migrations.CreateModel(
+            "Pony",
+            [("id", models.AutoField(primary_key=True))],
+            options={"verbose_name": "Pony"}
+        )
+        new_state = project_state.clone()
+        create_operation.state_forwards("test_crmoalo", new_state)
+        
+        # Now alter the options
+        alter_operation = migrations.AlterModelOptions("Pony", {})
+        
+        # Test the reduction
+        reduced_operation = create_operation.reduce(alter_operation, "test_crmoalo")
+        self.assertEqual(len(reduced_operation), 1)
+        self.assertIsInstance(reduced_operation[0], migrations.CreateModel)
+        self.assertEqual(reduced_operation[0].options, {})
 
+    
 
 class TestCreateModel(SimpleTestCase):
-
     def test_references_model_mixin(self):
         migrations.CreateModel(
             'name',
