@@ -279,6 +279,22 @@ class Collector:
             if not found:
                 return
         self.data = {model: self.data[model] for model in sorted_models}
+    def _combine_fast_deletes(self):
+        """
+        Combine fast deletes into a single queryset per model to reduce the
+        number of queries, but limit the combination to avoid overly large queries.
+        """
+        combined_deletes = []
+        for qs in self.fast_deletes:
+            if not combined_deletes or combined_deletes[-1].model != qs.model:
+                combined_deletes.append(qs)
+            else:
+                last_qs = combined_deletes[-1]
+                if last_qs.count() + qs.count() <= 1000:  # Limit to 1000 objects per query
+                    combined_deletes[-1] = last_qs | qs
+                else:
+                    combined_deletes.append(qs)
+        return combined_deletes
 
     def delete(self):
         # sort instance collections
@@ -292,15 +308,6 @@ class Collector:
         # number of objects deleted for each model label
         deleted_counter = Counter()
 
-        # Optimize for the case with a single obj and no dependencies
-        if len(self.data) == 1 and len(instances) == 1:
-            instance = list(instances)[0]
-            if self.can_fast_delete(instance):
-                with transaction.mark_for_rollback_on_error():
-                    count = sql.DeleteQuery(model).delete_batch([instance.pk], self.using)
-                setattr(instance, model._meta.pk.attname, None)
-                return count, {model._meta.label: count}
-
         with transaction.atomic(using=self.using, savepoint=False):
             # send pre_delete signals
             for model, obj in self.instances_with_model():
@@ -310,7 +317,8 @@ class Collector:
                     )
 
             # fast deletes
-            for qs in self.fast_deletes:
+            combined_fast_deletes = self._combine_fast_deletes()
+            for qs in combined_fast_deletes:
                 count = qs._raw_delete(using=self.using)
                 deleted_counter[qs.model._meta.label] += count
 
@@ -343,6 +351,11 @@ class Collector:
             for (field, value), instances in instances_for_fieldvalues.items():
                 for obj in instances:
                     setattr(obj, field.attname, value)
+        for model, instances in self.data.items():
+            for instance in instances:
+                setattr(instance, model._meta.pk.attname, None)
+        return sum(deleted_counter.values()), dict(deleted_counter)
+        return sum(deleted_counter.values()), dict(deleted_counter)
         for model, instances in self.data.items():
             for instance in instances:
                 setattr(instance, model._meta.pk.attname, None)
