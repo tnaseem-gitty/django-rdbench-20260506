@@ -1046,29 +1046,38 @@ class Query(BaseExpression):
         return sql, params
 
     def resolve_lookup_value(self, value, can_reuse, allow_joins, simple_col):
-        if hasattr(value, 'resolve_expression'):
+        from django.db.models import OuterRef, Q
+
+        if isinstance(value, OuterRef):
+            return value
+
+        if isinstance(value, Q):
+            # Handle OuterRef inside Q objects
+            children = []
+            for child in value.children:
+                if isinstance(child, tuple):
+                    key, val = child
+                    if isinstance(val, OuterRef):
+                        children.append((key, val))
+                    else:
+                        children.append((key, self.resolve_lookup_value(val, can_reuse, allow_joins, simple_col)))
+                else:
+                    children.append(child)
+            value.children = children
+        elif isinstance(value, (list, tuple)):
+            resolved_values = []
+            for sub_value in value:
+                if isinstance(sub_value, OuterRef):
+                    resolved_values.append(sub_value)
+                else:
+                    resolved_values.append(self.resolve_lookup_value(sub_value, can_reuse, allow_joins, simple_col))
+            value = tuple(resolved_values)
+        elif hasattr(value, 'resolve_expression'):
             kwargs = {'reuse': can_reuse, 'allow_joins': allow_joins}
             if isinstance(value, F):
                 kwargs['simple_col'] = simple_col
             value = value.resolve_expression(self, **kwargs)
-        elif isinstance(value, (list, tuple)):
-            # The items of the iterable may be expressions and therefore need
-            # to be resolved independently.
-            resolved_values = []
-            for sub_value in value:
-                if hasattr(sub_value, 'resolve_expression'):
-                    if isinstance(sub_value, F):
-                        resolved_values.append(sub_value.resolve_expression(
-                            self, reuse=can_reuse, allow_joins=allow_joins,
-                            simple_col=simple_col,
-                        ))
-                    else:
-                        resolved_values.append(sub_value.resolve_expression(
-                            self, reuse=can_reuse, allow_joins=allow_joins,
-                        ))
-                else:
-                    resolved_values.append(sub_value)
-            value = tuple(resolved_values)
+
         return value
 
     def solve_lookup_type(self, lookup):
