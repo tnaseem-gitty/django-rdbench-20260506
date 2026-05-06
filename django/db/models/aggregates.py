@@ -99,11 +99,10 @@ class Aggregate(Func):
 class Avg(FixDurationInputMixin, NumericOutputFieldMixin, Aggregate):
     function = 'AVG'
     name = 'Avg'
-
+    allow_distinct = True
 
 class Count(Aggregate):
-    function = 'COUNT'
-    name = 'Count'
+    function = 'COUNT'    name = 'Count'
     output_field = IntegerField()
     allow_distinct = True
 
@@ -141,11 +140,10 @@ class StdDev(NumericOutputFieldMixin, Aggregate):
 
 class Sum(FixDurationInputMixin, Aggregate):
     function = 'SUM'
-    name = 'Sum'
+    allow_distinct = True
 
 
-class Variance(NumericOutputFieldMixin, Aggregate):
-    name = 'Variance'
+class Variance(NumericOutputFieldMixin, Aggregate):    name = 'Variance'
 
     def __init__(self, expression, sample=False, **extra):
         self.function = 'VAR_SAMP' if sample else 'VAR_POP'
