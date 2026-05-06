@@ -743,6 +743,11 @@ class Query(BaseExpression):
                 old_model = cur_model
                 if name in self._filtered_relations:
                     name = self._filtered_relations[name].relation_name
+                # Add check for proxy models
+                if opts.proxy:
+                    opts = opts.concrete_model._meta
+                    # Ensure we always include the 'id' field for proxy models
+                    add_to_dict(must_include, opts.model, opts.pk)
                 source = opts.get_field(name)
                 if is_reverse_o2o(source):
                     cur_model = source.related_model
@@ -784,6 +789,8 @@ class Query(BaseExpression):
                     workset[model].update(values)
             for model, fields in workset.items():
                 target[model] = {f.attname for f in fields}
+                # Always include the 'id' field
+                target[model].add('id')
         else:
             for model, values in must_include.items():
                 if model in seen:
@@ -800,6 +807,8 @@ class Query(BaseExpression):
                 seen.setdefault(model, set())
             for model, fields in seen.items():
                 target[model] = {f.attname for f in fields}
+                # Always include the 'id' field
+                target[model].add('id')
 
     def table_alias(self, table_name, create=False, filtered_relation=None):
         """
