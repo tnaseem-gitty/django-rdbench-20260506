@@ -22,7 +22,16 @@ from django.forms.widgets import Select
 from django.test import SimpleTestCase, TestCase
 from django.test.utils import isolate_apps
 
-from .models import Band, Concert, Song
+class Genre(models.Model):
+    name = models.CharField(max_length=50)
+
+class Band(models.Model):
+    name = models.CharField(max_length=100)
+    bio = models.TextField()
+    sign_date = models.DateField()
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+
+from .models import Concert, Song
 
 
 class MockRequest:
@@ -938,3 +947,22 @@ class ModelAdminPermissionTests(SimpleTestCase):
             self.assertFalse(ma.has_module_permission(request))
         finally:
             ma.opts.app_label = original_app_label
+
+@isolate_apps('modeladmin')
+class CustomEmptyLabelTest(TestCase):
+    def setUp(self):
+        self.site = AdminSite()
+        self.genre = Genre.objects.create(name="Rock")
+
+    def test_custom_empty_label(self):
+        class BandAdmin(ModelAdmin):
+            radio_fields = {'genre': VERTICAL}
+
+            def formfield_for_foreignkey(self, db_field, request, **kwargs):
+                if db_field.name == 'genre':
+                    kwargs['empty_label'] = "Custom Empty Label"
+                return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+        ma = BandAdmin(Band, self.site)
+        form = ma.get_form(request)()
+        self.assertEqual(form.fields['genre'].empty_label, "Custom Empty Label")
