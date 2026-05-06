@@ -20,15 +20,14 @@ class DeleteQuery(Query):
     def do_query(self, table, where, using):
         self.alias_map = {table: self.alias_map[table]}
         self.where = where
-        cursor = self.get_compiler(using).execute_sql(CURSOR)
-        if cursor:
-            with cursor:
-                return cursor.rowcount
-        return 0
+        # Direct delete statement without subquery
+        sql = f'DELETE FROM {table} WHERE {where}'
+        with self.get_compiler(using).connection.cursor() as cursor:
+            cursor.execute(sql)
+            return cursor.rowcount
 
     def delete_batch(self, pk_list, using):
-        """
-        Set up and execute delete queries for all the objects in pk_list.
+        """        Set up and execute delete queries for all the objects in pk_list.
 
         More than one physical query may be executed if there are a
         lot of values in pk_list.
@@ -38,15 +37,18 @@ class DeleteQuery(Query):
         field = self.get_meta().pk
         for offset in range(0, len(pk_list), GET_ITERATOR_CHUNK_SIZE):
             self.where = self.where_class()
-            self.add_q(Q(
-                **{field.attname + '__in': pk_list[offset:offset + GET_ITERATOR_CHUNK_SIZE]}))
-            num_deleted += self.do_query(self.get_meta().db_table, self.where, using=using)
+            self.add_q(Q(**{field.attname + '__in': pk_list[offset:offset + GET_ITERATOR_CHUNK_SIZE]}))
+            # Direct delete statement without subquery
+            table = self.get_meta().db_table
+            where = f"{field.attname} IN ({','.join(map(str, pk_list[offset:offset + GET_ITERATOR_CHUNK_SIZE]))})"
+            sql = f"DELETE FROM {table} WHERE {where}"
+            with self.get_compiler(using).connection.cursor() as cursor:
+                cursor.execute(sql)
+                num_deleted += cursor.rowcount
         return num_deleted
-
 
 class UpdateQuery(Query):
     """An UPDATE SQL query."""
-
     compiler = 'SQLUpdateCompiler'
 
     def __init__(self, *args, **kwargs):
