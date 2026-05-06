@@ -51,11 +51,10 @@ class DatabaseClient(BaseDatabaseClient):
             env['PGSSLKEY'] = str(sslkey)
         if passfile:
             env['PGPASSFILE'] = str(passfile)
-        return args, env
+        return args, env if env else None
 
     def runshell(self, parameters):
-        sigint_handler = signal.getsignal(signal.SIGINT)
-        try:
+        sigint_handler = signal.getsignal(signal.SIGINT)        try:
             # Allow SIGINT to pass to psql to abort queries.
             signal.signal(signal.SIGINT, signal.SIG_IGN)
             super().runshell(parameters)
