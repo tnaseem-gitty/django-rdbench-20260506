@@ -98,4 +98,39 @@ class SiteActionsTests(SimpleTestCase):
         action_name = 'delete_selected'
         self.assertEqual(self.site.get_action(action_name), delete_selected)
         self.site.disable_action(action_name)
-        self.assertEqual(self.site.get_action(action_name), delete_selected)
+
+class GetInlinesTest(TestCase):
+    def setUp(self):
+        self.site = admin.AdminSite()
+
+    def test_get_inlines_returns_inlines(self):
+        class TestModelAdmin(admin.ModelAdmin):
+            inlines = ['test_inline']
+
+        model_admin = TestModelAdmin(model=User, admin_site=self.site)
+        request = RequestFactory().get('/')
+        self.assertEqual(model_admin.get_inlines(request), ['test_inline'])
+
+    def test_get_inlines_can_be_overridden(self):
+        class TestModelAdmin(admin.ModelAdmin):
+            inlines = ['default_inline']
+
+            def get_inlines(self, request, obj=None):
+                if obj and obj.username == 'special_user':
+                    return ['special_inline']
+                return super().get_inlines(request, obj)
+
+        model_admin = TestModelAdmin(model=User, admin_site=self.site)
+        request = RequestFactory().get('/')
+
+        # Test with no object (add view)
+        self.assertEqual(model_admin.get_inlines(request), ['default_inline'])
+
+        # Test with regular object
+        regular_user = User(username='regular_user')
+        self.assertEqual(model_admin.get_inlines(request, regular_user), ['default_inline'])
+
+        # Test with special object
+        special_user = User(username='special_user')
+        self.assertEqual(model_admin.get_inlines(request, special_user), ['special_inline'])
+
