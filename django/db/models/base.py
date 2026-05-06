@@ -1747,11 +1747,10 @@ class Model(metaclass=ModelBase):
                     else:
                         _cls = None
                 except (FieldDoesNotExist, AttributeError):
-                    if fld is None or fld.get_transform(part) is None:
+                    if fld is None or (fld.get_transform(part) is None and part != 'isnull'):
                         errors.append(
                             checks.Error(
-                                "'ordering' refers to the nonexistent field, "
-                                "related field, or lookup '%s'." % field,
+                                "'ordering' refers to the nonexistent field, "                                "related field, or lookup '%s'." % field,
                                 obj=cls,
                                 id='models.E015',
                             )
