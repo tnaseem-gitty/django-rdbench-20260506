@@ -35,6 +35,12 @@ Minor features
 
 * ...
 
+:mod:`django.forms`
+~~~~~~~~~~~~~~~~~~~
+
+* The ``Field.__deepcopy__()`` method now correctly creates a deep copy of the ``error_messages`` dictionary, preventing unintended sharing of error messages between copied field instances.
+
+
 :mod:`django.contrib.admindocs`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
