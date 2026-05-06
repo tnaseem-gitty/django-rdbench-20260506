@@ -1482,3 +1482,15 @@ class AllValidTests(SimpleTestCase):
         expected_errors = [{'votes': ['This field is required.']}, {'votes': ['This field is required.']}]
         self.assertEqual(formset1._errors, expected_errors)
         self.assertEqual(formset2._errors, expected_errors)
+    def test_nonform_css_class_in_non_form_errors(self):
+        class TestForm(Form):
+            name = CharField()
+
+        class TestFormSet(BaseFormSet):
+            def clean(self):
+                raise ValidationError('Non-form error', code='nonform')
+
+        TestFormSetFactory = formset_factory(TestForm, formset=TestFormSet, extra=1)
+        formset = TestFormSetFactory(data={'form-TOTAL_FORMS': '1', 'form-INITIAL_FORMS': '0', 'form-MIN_NUM_FORMS': '0', 'form-MAX_NUM_FORMS': '1000'})
+        self.assertFalse(formset.is_valid())
+        self.assertIn('nonform', formset.non_form_errors().as_ul())
