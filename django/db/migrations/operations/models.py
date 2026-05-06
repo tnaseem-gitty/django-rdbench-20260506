@@ -64,6 +64,20 @@ class CreateModel(ModelOperation):
             ),
         )
         _check_for_duplicates("managers", (name for name, _ in self.managers))
+    def reduce(self, operation, app_label):
+        # Optimize CreateModel + AlterModelManagers into a single CreateModel operation
+        if isinstance(operation, AlterModelManagers) and self.name_lower == operation.name_lower:
+            self.managers = operation.managers
+            return [
+                CreateModel(
+                    name=self.name,
+                    fields=self.fields,
+                    options=self.options,
+                    bases=self.bases,
+                    managers=self.managers,
+                )
+            ]
+        return super().reduce(operation, app_label)
 
     def deconstruct(self):
         kwargs = {
