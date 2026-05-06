@@ -56,10 +56,10 @@ class ReadOnlyPasswordHashField(forms.Field):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("required", False)
+        kwargs.setdefault("disabled", True)
         super().__init__(*args, **kwargs)
 
-    def bound_data(self, data, initial):
-        # Always return initial because the widget doesn't
+    def bound_data(self, data, initial):        # Always return initial because the widget doesn't
         # render an input field.
         return initial
 

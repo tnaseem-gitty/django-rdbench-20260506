@@ -18,11 +18,13 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import translation
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
-
+class ReadOnlyPasswordHashFieldTest(TestCase):
+    def test_read_only_password_hash_field_disabled(self):
+        field = ReadOnlyPasswordHashField()
+        self.assertTrue(field.disabled)
 from .models.custom_user import (
     CustomUser, CustomUserWithoutIsActiveField, ExtensionUser,
-)
-from .models.with_custom_email_field import CustomEmailField
+)from .models.with_custom_email_field import CustomEmailField
 from .models.with_integer_username import IntegerUsernameUser
 from .settings import AUTH_TEMPLATES
 
