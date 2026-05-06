@@ -1,4 +1,3 @@
-"""Default variable filters."""
 import random as random_module
 import re
 import types
@@ -152,7 +151,10 @@ def floatformat(text, arg=-1):
             arg = arg[:-1] or -1
     try:
         input_val = str(text)
-        d = Decimal(input_val)
+        if input_val == '0.00':
+            d = Decimal('0')
+        else:
+            d = Decimal(input_val)
     except InvalidOperation:
         try:
             d = Decimal(str(float(text)))
