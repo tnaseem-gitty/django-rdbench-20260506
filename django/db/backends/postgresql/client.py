@@ -17,6 +17,10 @@ class DatabaseClient(BaseDatabaseClient):
         dbname = conn_params.get('database', '')
         user = conn_params.get('user', '')
         passwd = conn_params.get('password', '')
+        # Add support for SSL options
+        sslmode = conn_params.get('sslmode')
+        sslcert = conn_params.get('sslcert')
+        sslkey = conn_params.get('sslkey')
 
         if user:
             args += ['-U', user]
@@ -24,6 +28,13 @@ class DatabaseClient(BaseDatabaseClient):
             args += ['-h', host]
         if port:
             args += ['-p', str(port)]
+        # Pass SSL options to psql command
+        if sslmode:
+            args += [f'--set=sslmode={sslmode}']
+        if sslcert:
+            args += [f'--set=sslcert={sslcert}']
+        if sslkey:
+            args += [f'--set=sslkey={sslkey}']
         args += [dbname]
 
         sigint_handler = signal.getsignal(signal.SIGINT)
