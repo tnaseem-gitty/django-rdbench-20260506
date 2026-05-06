@@ -182,7 +182,6 @@ class TagHelperNode(Node):
 
 
 class SimpleNode(TagHelperNode):
-
     def __init__(self, func, takes_context, args, kwargs, target_var):
         super().__init__(func, takes_context, args, kwargs)
         self.target_var = target_var
@@ -196,6 +195,18 @@ class SimpleNode(TagHelperNode):
         if context.autoescape:
             output = conditional_escape(output)
         return output
+
+    def get_resolved_arguments(self, context):
+        resolved_args = [var.resolve(context) for var in self.args]
+        if self.takes_context:
+            resolved_args = [context] + resolved_args
+        resolved_kwargs = {}
+        for k, v in self.kwargs.items():
+            if isinstance(v, str):
+                resolved_kwargs[k] = v
+            else:
+                resolved_kwargs[k] = v.resolve(context)
+        return resolved_args, resolved_kwargs
 
 
 class InclusionNode(TagHelperNode):
@@ -251,17 +262,15 @@ def parse_bits(parser, bits, params, varargs, varkw, defaults,
     args = []
     kwargs = {}
     unhandled_params = list(params)
-    unhandled_kwargs = [
-        kwarg for kwarg in kwonly
-        if not kwonly_defaults or kwarg not in kwonly_defaults
-    ]
+    unhandled_kwargs = list(kwonly)
+    handled_kwargs = set()
     for bit in bits:
         # First we try to extract a potential kwarg from the bit
         kwarg = token_kwargs([bit], parser)
         if kwarg:
             # The kwarg was successfully extracted
             param, value = kwarg.popitem()
-            if param not in params and param not in unhandled_kwargs and varkw is None:
+            if param not in params and param not in kwonly and varkw is None:
                 # An unexpected keyword argument was supplied
                 raise TemplateSyntaxError(
                     "'%s' received unexpected keyword argument '%s'" %
@@ -281,6 +290,7 @@ def parse_bits(parser, bits, params, varargs, varkw, defaults,
                 elif param in unhandled_kwargs:
                     # Same for keyword-only arguments
                     unhandled_kwargs.remove(param)
+                handled_kwargs.add(param)
         else:
             if kwargs:
                 raise TemplateSyntaxError(
@@ -301,11 +311,21 @@ def parse_bits(parser, bits, params, varargs, varkw, defaults,
         # Consider the last n params handled, where n is the
         # number of defaults.
         unhandled_params = unhandled_params[:-len(defaults)]
-    if unhandled_params or unhandled_kwargs:
+    if kwonly_defaults:
+        for kwarg, default_value in kwonly_defaults.items():
+            if kwarg not in handled_kwargs:
+                kwargs[kwarg] = default_value
+                unhandled_kwargs.remove(kwarg)
+    if unhandled_params:
         # Some positional arguments were not supplied
         raise TemplateSyntaxError(
             "'%s' did not receive value(s) for the argument(s): %s" %
-            (name, ", ".join("'%s'" % p for p in unhandled_params + unhandled_kwargs)))
+            (name, ", ".join("'%s'" % p for p in unhandled_params)))
+    if unhandled_kwargs:
+        # Some keyword-only arguments without default values were not supplied
+        raise TemplateSyntaxError(
+            "'%s' did not receive value(s) for the keyword-only argument(s) without default values: %s" %
+            (name, ", ".join("'%s'" % p for p in unhandled_kwargs)))
     return args, kwargs
 
 
