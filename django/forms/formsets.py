@@ -356,9 +356,9 @@ class BaseFormSet(RenderableFormMixin):
         are none.
         """
         if self._non_form_errors is None:
+            self._non_form_errors = self.error_class(self._non_form_errors or [], 'nonform')
             self.full_clean()
         return self._non_form_errors
-
     @property
     def errors(self):
         """Return a list of form.errors for every form in self.forms."""
