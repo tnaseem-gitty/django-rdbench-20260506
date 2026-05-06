@@ -102,13 +102,12 @@ class Command(BaseCommand):
         for alias in sorted(aliases_to_check):
             connection = connections[alias]
             if (connection.settings_dict['ENGINE'] != 'django.db.backends.dummy' and any(
-                    # At least one model must be migrated to the database.
+                    # Check allow_migrate only for models within their respective app
                     router.allow_migrate(connection.alias, app_label, model_name=model._meta.object_name)
                     for app_label in consistency_check_labels
-                    for model in apps.get_models(app_label)
+                    for model in apps.get_app_config(app_label).get_models()
             )):
                 loader.check_consistent_history(connection)
-
         # Before anything else, see if there's conflicting apps and drop out
         # hard if there are any and they don't want to merge
         conflicts = loader.detect_conflicts()
