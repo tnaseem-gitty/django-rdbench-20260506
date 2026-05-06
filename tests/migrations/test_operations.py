@@ -5028,3 +5028,33 @@ class FieldOperationTests(SimpleTestCase):
         self.assertIs(
             operation.references_field("Through", "second", "migrations"), True
         )
+
+    @skipUnlessDBFeature('can_alter_table_rename_column')
+    def test_alter_field_noop_on_sqlite_choices(self):
+        """
+        Tests that AlterField is a no-op when only changing choices on SQLite.
+        """
+        project_state = self.set_up_test_model("test_alfnc")
+        operation = migrations.AlterField(
+            "Pony",
+            "pink",
+            models.IntegerField(choices=[(1, "Red"), (2, "Blue")], default=1),
+        )
+        new_state = project_state.clone()
+        operation.state_forwards("test_alfnc", new_state)
+        self.assertIsNot(new_state.models["test_alfnc", "pony"], project_state.models["test_alfnc", "pony"])
+
+        # Test the database alteration
+        self.assertColumnExists("test_alfnc_pony", "pink")
+        with connection.schema_editor() as editor:
+            with CaptureQueriesContext(connection) as ctx:
+                operation.database_forwards("test_alfnc", editor, project_state, new_state)
+        self.assertEqual(len(ctx), 0, "No SQL statements should be executed for SQLite when only changing choices")
+
+        # Reversal should be a no-op as well
+        with connection.schema_editor() as editor:
+            with CaptureQueriesContext(connection) as ctx:
+                operation.database_backwards("test_alfnc", editor, new_state, project_state)
+        self.assertEqual(len(ctx), 0, "No SQL statements should be executed for SQLite when only changing choices")
+
+        self.assertColumnExists("test_alfnc_pony", "pink")

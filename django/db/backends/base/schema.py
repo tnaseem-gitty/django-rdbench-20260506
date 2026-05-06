@@ -1389,6 +1389,7 @@ class BaseDatabaseSchemaEditor:
             "related_query_name",
             "validators",
             "verbose_name",
+            "choices",  # Add this line
         ]
         for attr in non_database_attrs:
             old_kwargs.pop(attr, None)
