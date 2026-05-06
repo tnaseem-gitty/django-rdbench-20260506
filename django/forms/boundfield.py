@@ -69,6 +69,23 @@ class BoundField:
                 % type(idx).__name__
             )
         return self.subwidgets[idx]
+    @property
+    def _did_change(self):
+        """
+        Return True if the data for this field has changed from its initial value.
+        """
+        data = self.data
+        initial = self.initial if self.form.is_bound else self.form.initial.get(self.name, self.field.initial)
+        if isinstance(data, str) and isinstance(initial, str):
+            return data != initial
+        elif isinstance(data, datetime.datetime) and isinstance(initial, datetime.datetime):
+            return data.replace(microsecond=0) != initial.replace(microsecond=0)
+        elif isinstance(data, datetime.date) and isinstance(initial, datetime.date):
+            return data != initial
+        elif isinstance(data, (list, tuple)) and isinstance(initial, (list, tuple)):
+            return set(data) != set(initial)
+        else:
+            return data != initial
 
     @property
     def errors(self):
