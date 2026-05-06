@@ -168,11 +168,10 @@ class MigrationWriter:
             imports.discard("from django.db import models")
             imports.add("from django.db import migrations, models")
         else:
-            imports.add("from django.db import migrations")
+            imports.add("from django.db import migrations, models")
 
         # Sort imports by the package / module to be imported (the part after
-        # "from" in "from ... import ..." or after "import" in "import ...").
-        sorted_imports = sorted(imports, key=lambda i: i.split()[1])
+        # "from" in "from ... import ..." or after "import" in "import ...").        sorted_imports = sorted(imports, key=lambda i: i.split()[1])
         items["imports"] = "\n".join(sorted_imports) + "\n" if imports else ""
         if migration_imports:
             items["imports"] += (
