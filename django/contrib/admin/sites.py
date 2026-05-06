@@ -453,11 +453,10 @@ class AdminSite:
                 pass
             else:
                 if getattr(match.func, "should_append_slash", True):
-                    return HttpResponsePermanentRedirect("%s/" % request.path)
+                    return HttpResponsePermanentRedirect("%s/?%s" % (request.path, request.META['QUERY_STRING']) if request.META['QUERY_STRING'] else "%s/" % request.path)
         raise Http404
 
-    def _build_app_dict(self, request, label=None):
-        """
+    def _build_app_dict(self, request, label=None):        """
         Build the app dictionary. The optional `label` parameter filters models
         of a specific app.
         """
