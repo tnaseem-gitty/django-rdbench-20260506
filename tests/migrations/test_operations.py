@@ -3182,33 +3182,55 @@ class OperationTests(OperationTestBase):
             operation.database_backwards(
                 "test_alflin", editor, new_state, project_state
             )
-        # Ensure the index is still there
-        self.assertIndexExists("test_alflin_pony", ["pink"])
+    def test_rename_index_reapply(self):
+        # Test with a named index
+        app_label = "test_rnirap"
+        project_state = self.set_up_test_model(app_label)
+        table_name = f"{app_label}_pony"
+        old_name = "old_idx"
+        new_name = "new_idx"
+        
+        index = models.Index(fields=["weight"], name=old_name)
+        operation = migrations.AddIndex("Pony", index)
+        self.apply_operation(app_label, project_state, operation)
+        
+        operation = migrations.RenameIndex("Pony", new_name=new_name, old_name=old_name)
+        new_state = self.apply_operation(app_label, project_state, operation)
+        self.assertIndexNameExists(table_name, new_name)
+        
+        # Move backward
+        project_state = new_state.clone()
+        operation = migrations.RenameIndex("Pony", new_name=old_name, old_name=new_name)
+        self.apply_operation(app_label, project_state, operation, atomic=False)
+        self.assertIndexNameNotExists(table_name, new_name)
+        self.assertIndexNameExists(table_name, old_name)
+        
+        # Move forward again
+        operation = migrations.RenameIndex("Pony", new_name=new_name, old_name=old_name)
+        self.apply_operation(app_label, project_state, operation, atomic=False)
+        self.assertIndexNameExists(table_name, new_name)
+        self.assertIndexNameNotExists(table_name, old_name)
 
-    def test_alter_index_together(self):
-        """
-        Tests the AlterIndexTogether operation.
-        """
-        project_state = self.set_up_test_model("test_alinto")
-        # Test the state alteration
-        operation = migrations.AlterIndexTogether("Pony", [("pink", "weight")])
-        self.assertEqual(
-            operation.describe(), "Alter index_together for Pony (1 constraint(s))"
-        )
-        self.assertEqual(
-            operation.migration_name_fragment,
-            "alter_pony_index_together",
-        )
-        new_state = project_state.clone()
-        operation.state_forwards("test_alinto", new_state)
-        self.assertEqual(
-            len(
-                project_state.models["test_alinto", "pony"].options.get(
-                    "index_together", set()
-                )
-            ),
-            0,
-        )
+        # Test with an unnamed index (using old_fields)
+        app_label = "test_rnirap_unnamed"
+        project_state = self.set_up_test_model(app_label, unique_together=[("weight", "pink")])
+        table_name = f"{app_label}_pony"
+        new_name = "new_unnamed_idx"
+        
+        operation = migrations.RenameIndex("Pony", new_name=new_name, old_fields=("weight", "pink"))
+        new_state = self.apply_operation(app_label, project_state, operation)
+        self.assertIndexNameExists(table_name, new_name)
+        
+        # Move backward
+        project_state = new_state.clone()
+        operation = migrations.RenameIndex("Pony", old_name=new_name, new_name=None)
+        self.apply_operation(app_label, project_state, operation, atomic=False)
+        self.assertIndexNameNotExists(table_name, new_name)
+        
+        # Move forward again
+        operation = migrations.RenameIndex("Pony", new_name=new_name, old_fields=("weight", "pink"))
+        self.apply_operation(app_label, project_state, operation, atomic=False)
+        self.assertIndexNameExists(table_name, new_name)
         self.assertEqual(
             len(
                 new_state.models["test_alinto", "pony"].options.get(

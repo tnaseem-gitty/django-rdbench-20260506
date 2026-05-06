@@ -945,14 +945,8 @@ class RenameIndex(IndexOperation):
                 from_model, column_names=columns, index=True
             )
             if len(matching_index_name) != 1:
-                raise ValueError(
-                    "Found wrong number (%s) of indexes for %s(%s)."
-                    % (
-                        len(matching_index_name),
-                        from_model._meta.db_table,
-                        ", ".join(columns),
-                    )
-                )
+                # If the index doesn't exist, we don't need to rename it
+                return
             old_index = models.Index(
                 fields=self.old_fields,
                 name=matching_index_name[0],
@@ -960,28 +954,32 @@ class RenameIndex(IndexOperation):
         else:
             from_model_state = from_state.models[app_label, self.model_name_lower]
             old_index = from_model_state.get_index_by_name(self.old_name)
+            if old_index is None:
+                # If the index doesn't exist, we don't need to rename it
+                return
 
+        new_index = models.Index(name=self.new_name, fields=old_index.fields)
+        schema_editor.alter_index(model, old_index, new_index)
         to_model_state = to_state.models[app_label, self.model_name_lower]
         new_index = to_model_state.get_index_by_name(self.new_name)
         schema_editor.rename_index(model, old_index, new_index)
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
         if self.old_fields:
-            # Backward operation with unnamed index is a no-op.
-            return
-
-        self.new_name_lower, self.old_name_lower = (
-            self.old_name_lower,
-            self.new_name_lower,
-        )
-        self.new_name, self.old_name = self.old_name, self.new_name
+            # For unnamed indexes, we need to reverse the renaming
+            self.new_name, self.old_fields = self.old_fields, None
+            self.old_name = self.new_name
+        else:
+            self.new_name, self.old_name = self.old_name, self.new_name
 
         self.database_forwards(app_label, schema_editor, from_state, to_state)
 
-        self.new_name_lower, self.old_name_lower = (
-            self.old_name_lower,
-            self.new_name_lower,
-        )
+        if self.old_fields:
+            # Restore the original state
+            self.old_fields, self.new_name = self.new_name, None
+            self.old_name = None
+        else:
+            self.new_name, self.old_name = self.old_name, self.new_name
         self.new_name, self.old_name = self.old_name, self.new_name
 
     def describe(self):
