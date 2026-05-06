@@ -149,6 +149,7 @@ class Options:
     def contribute_to_class(self, cls, name):
         from django.db import connection
         from django.db.backends.utils import truncate_name
+        from django.db.models.expressions import OrderBy, F
 
         cls._meta = self
         self.model = cls
@@ -172,10 +173,16 @@ class Options:
                     del meta_attrs[name]
             for attr_name in DEFAULT_NAMES:
                 if attr_name in meta_attrs:
-                    setattr(self, attr_name, meta_attrs.pop(attr_name))
+                    value = meta_attrs.pop(attr_name)
+                    if attr_name == 'ordering':
+                        value = self._process_ordering(value)
+                    setattr(self, attr_name, value)
                     self.original_attrs[attr_name] = getattr(self, attr_name)
                 elif hasattr(self.meta, attr_name):
-                    setattr(self, attr_name, getattr(self.meta, attr_name))
+                    value = getattr(self.meta, attr_name)
+                    if attr_name == 'ordering':
+                        value = self._process_ordering(value)
+                    setattr(self, attr_name, value)
                     self.original_attrs[attr_name] = getattr(self, attr_name)
 
             self.unique_together = normalize_together(self.unique_together)
@@ -206,6 +213,21 @@ class Options:
         if not self.db_table:
             self.db_table = "%s_%s" % (self.app_label, self.model_name)
             self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
+
+    def _process_ordering(self, ordering):
+        from django.db.models.expressions import OrderBy, F
+        processed_ordering = []
+        for item in ordering:
+            if isinstance(item, (OrderBy, F)):
+                processed_ordering.append(item)
+            elif isinstance(item, str):
+                if item.startswith('-'):
+                    processed_ordering.append(OrderBy(F(item[1:]), descending=True))
+                else:
+                    processed_ordering.append(OrderBy(F(item)))
+            else:
+                processed_ordering.append(item)
+        return processed_ordering
 
     def _format_names_with_class(self, cls, objs):
         """App label/class name interpolation for object names."""
