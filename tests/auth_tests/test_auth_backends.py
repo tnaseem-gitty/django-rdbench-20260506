@@ -260,6 +260,14 @@ class ModelBackendTest(BaseModelBackendTest, TestCase):
             username='test', email='test@example.com', password='test',
         )
         self.assertEqual(authenticate(username='test', password='test'), user)
+    def test_authenticate_with_none_username_and_password(self):
+        """
+        When both username and password are None, authenticate() should return None.
+        """
+        self.assertIsNone(authenticate(username=None, password=None))
+        # Ensure no database query was made
+        with self.assertNumQueries(0):
+            authenticate(username=None, password=None)
 
 
 @override_settings(AUTH_USER_MODEL='auth_tests.ExtensionUser')
