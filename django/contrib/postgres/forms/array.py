@@ -1,8 +1,20 @@
-import copy
 from itertools import chain
-
 from django import forms
 from django.contrib.postgres.validators import (
+    ArrayMaxLengthValidator, ArrayMinLengthValidator,
+)
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+from ..utils import prefix_validation_error
+
+import copy
+
+
+
+from itertools import chain
+
+from django import formsfrom django.contrib.postgres.validators import (
     ArrayMaxLengthValidator, ArrayMinLengthValidator,
 )
 from django.core.exceptions import ValidationError
@@ -140,10 +152,10 @@ class SplitArrayWidget(forms.Widget):
         final_attrs = self.build_attrs(attrs)
         id_ = final_attrs.get('id')
         for i in range(max(len(value), self.size)):
+            final_attrs = self.build_attrs(attrs)
             try:
                 widget_value = value[i]
-            except IndexError:
-                widget_value = None
+            except IndexError:                widget_value = None
             if id_:
                 final_attrs = {**final_attrs, 'id': '%s_%s' % (id_, i)}
             context['widget']['subwidgets'].append(
