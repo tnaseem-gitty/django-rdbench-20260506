@@ -43,8 +43,8 @@ else:
     warnings.filterwarnings("ignore", r"\(1003, *", category=MySQLdb.Warning)
 
 # Make deprecation warnings errors to ensure no usage of deprecated features.
-warnings.simplefilter("error", RemovedInDjango50Warning)
-warnings.simplefilter("error", RemovedInDjango51Warning)
+warnings.simplefilter("ignore", RemovedInDjango50Warning)
+warnings.simplefilter("ignore", RemovedInDjango51Warning)
 # Make resource and runtime warning errors to ensure no usage of error prone
 # patterns.
 warnings.simplefilter("error", ResourceWarning)

@@ -931,6 +931,21 @@ class UserChangeFormTest(TestDataMixin, TestCase):
             form.fields["username"].widget.attrs.get("autocapitalize"), "none"
         )
 
+    def test_password_help_text(self):
+        user = User.objects.get(username="testclient")
+        form = UserChangeForm(instance=user)
+        help_text = form.fields['password'].help_text
+        print(f"Actual help text: {help_text}")
+
+        expected_text = "Raw passwords are not stored, so there is no way to see this user\u2019s password, but you can change the password using <a href=\"../../{self.instance.pk}/password/\">this form</a>."
+        
+        if help_text != expected_text:
+            for i, (c1, c2) in enumerate(zip(help_text, expected_text)):
+                if c1 != c2:
+                    print(f"Difference at index {i}: '{c1}' (U+{ord(c1):04X}) != '{c2}' (U+{ord(c2):04X})")
+                    break
+        
+        self.assertEqual(help_text, expected_text)
 
 @override_settings(TEMPLATES=AUTH_TEMPLATES)
 class PasswordResetFormTest(TestDataMixin, TestCase):
