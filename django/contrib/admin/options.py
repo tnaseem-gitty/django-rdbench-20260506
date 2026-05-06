@@ -461,6 +461,10 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
                 # Lookups on nonexistent fields are ok, since they're ignored
                 # later.
                 break
+            # Allow lookups on foreign keys that are used as primary keys
+            # This fixes an issue where such lookups were incorrectly disallowed
+            if isinstance(field, models.ForeignKey) and field.primary_key:
+                return True
             # It is allowed to filter on values that would be found from local
             # model anyways. For example, if you filter on employee__department__id,
             # then the id value would be found already from employee__department_id.
@@ -510,6 +514,11 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
         # to get this information from the change view URL.
         if field.primary_key:
             return True
+
+        # Allow lookups on foreign keys that are used as primary keys
+        if isinstance(field, models.ForeignKey) and field.primary_key:
+            return True
+
 
         # Allow reverse relationships to models defining m2m fields if they
         # target the specified field.

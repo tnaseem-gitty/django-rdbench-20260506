@@ -807,6 +807,23 @@ class ModelAdminTests(TestCase):
         )
 
 
+    @isolate_apps('modeladmin')
+    def test_lookup_allowed_foreign_primary(self):  # Test for foreign key as primary key
+        class Country(models.Model):
+            name = models.CharField(max_length=256)
+        class Place(models.Model):
+            country = models.ForeignKey(Country, models.CASCADE)
+        class Restaurant(models.Model):
+            place = models.OneToOneField(Place, models.CASCADE, primary_key=True)
+        class Waiter(models.Model):
+            restaurant = models.ForeignKey(Restaurant, models.CASCADE)
+        class WaiterAdmin(ModelAdmin):
+            list_filter = [
+                'restaurant__place__country',
+            ]
+        ma = WaiterAdmin(Waiter, self.site)
+        self.assertIs(ma.lookup_allowed('restaurant__place__country', 'test_value'), True)
+
 class ModelAdminPermissionTests(SimpleTestCase):
     class MockUser:
         def has_module_perms(self, app_label):
@@ -940,3 +957,5 @@ class ModelAdminPermissionTests(SimpleTestCase):
             self.assertFalse(ma.has_module_permission(request))
         finally:
             ma.opts.app_label = original_app_label
+
+
