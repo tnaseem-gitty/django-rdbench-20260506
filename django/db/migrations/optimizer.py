@@ -1,3 +1,5 @@
+from .operations.models import CreateModel, AlterModelManagers
+
 class MigrationOptimizer:
     """
     Power the optimization process, where you provide a list of Operations
@@ -8,6 +10,14 @@ class MigrationOptimizer:
     new CreateModel, and CreateModel and DeleteModel can be optimized into
     nothing.
     """
+    """
+    Power the optimization process, where you provide a list of Operations
+    and you are returned a list of equal or shorter length - operations
+    are merged into one if possible.
+
+    For example, a CreateModel and an AddField can be optimized into a
+    new CreateModel, and CreateModel and DeleteModel can be optimized into
+    nothing.    """
 
     def optimize(self, operations, app_label):
         """
