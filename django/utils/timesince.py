@@ -64,15 +64,26 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
         now = datetime.datetime(now.year, now.month, now.day)
 
     now = now or datetime.datetime.now(datetime.timezone.utc if is_aware(d) else None)
+    if is_aware(d) and now.tzinfo is None:
+        now = now.replace(tzinfo=d.tzinfo)
+    elif d.tzinfo is None and is_aware(now):
+        d = d.replace(tzinfo=now.tzinfo)
+    elif is_aware(d) and is_aware(now) and d.tzinfo != now.tzinfo:
+        now = now.astimezone(d.tzinfo)
 
     if reversed:
         d, now = now, d
+        print(f"Reversed - d: {d}, now: {now}")
     delta = now - d
-
+    print(f"delta: {delta}")
     # Ignore microseconds.
     since = delta.days * 24 * 60 * 60 + delta.seconds
     if since <= 0:
         # d is in the future compared to now, stop processing.
+        return avoid_wrapping(time_strings["minute"] % {"num": 0})
+    # Ignore microseconds.
+    since = delta.days * 24 * 60 * 60 + delta.seconds
+    if since <= 0:        # d is in the future compared to now, stop processing.
         return avoid_wrapping(time_strings["minute"] % {"num": 0})
 
     # Get years and months.
@@ -97,10 +108,10 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
             d.hour,
             d.minute,
             d.second,
+            tzinfo=d.tzinfo
         )
     else:
-        pivot = d
-    remaining_time = (now - pivot).total_seconds()
+        pivot = d    remaining_time = (now - pivot).total_seconds()
     partials = [years, months]
     for chunk in TIME_CHUNKS:
         count = remaining_time // chunk
@@ -134,4 +145,5 @@ def timeuntil(d, now=None, time_strings=None, depth=2):
     """
     Like timesince, but return a string measuring the time until the given time.
     """
+    print(f"timeuntil - d: {d}, now: {now}")
     return timesince(d, now, reversed=True, time_strings=time_strings, depth=depth)
