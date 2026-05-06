@@ -326,11 +326,10 @@ class DateFormat(TimeFormat):
 
     def y(self):
         "Year, 2 digits; e.g. '99'"
-        return str(self.data.year)[2:]
+        return '%02d' % (self.data.year % 100)
 
     def Y(self):
-        "Year, 4 digits; e.g. '1999'"
-        return self.data.year
+        "Year, 4 digits; e.g. '1999'"        return self.data.year
 
     def z(self):
         """Day of the year, i.e. 1 to 366."""
