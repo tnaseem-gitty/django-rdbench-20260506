@@ -10,11 +10,29 @@ from django.utils.html import (
 from django.utils.safestring import mark_safe
 
 
-class TestUtilsHtml(SimpleTestCase):
+import unittest
+
+class TestUtilsHtml(unittest.TestCase):
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def assertRaisesMessage(self, expected_exception, expected_message):
+        """
+        Assert that an exception is raised with a specific message.
+        """
+        with self.assertRaises(expected_exception) as cm:
+            yield
+        self.assertEqual(str(cm.exception), expected_message)
+
+
+    def test_json_script_no_id(self):
+        value = {"key": "value"}
+        expected_output = '<script type="application/json">{"key": "value"}</script>'
+        self.assertEqual(json_script(value), expected_output)
 
     def check_output(self, function, value, output=None):
-        """
-        function(value) equals output. If output is None, function(value)
+        """        function(value) equals output. If output is None, function(value)
         equals value.
         """
         if output is None:

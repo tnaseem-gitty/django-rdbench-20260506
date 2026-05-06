@@ -61,22 +61,26 @@ _json_script_escapes = {
 }
 
 
-def json_script(value, element_id):
+def json_script(value, element_id=None):
     """
     Escape all the HTML/XML special characters with their unicode escapes, so
-    value is safe to be output anywhere except for inside a tag attribute. Wrap
-    the escaped JSON in a script tag.
+    value is safe to be output anywhere except for inside a tag attribute. Wrap    the escaped JSON in a script tag.
     """
     from django.core.serializers.json import DjangoJSONEncoder
     json_str = json.dumps(value, cls=DjangoJSONEncoder).translate(_json_script_escapes)
-    return format_html(
-        '<script id="{}" type="application/json">{}</script>',
-        element_id, mark_safe(json_str)
-    )
+    if element_id:
+        return format_html(
+            '<script id="{}" type="application/json">{}</script>',
+            element_id, mark_safe(json_str)
+        )
+    else:
+        return format_html(
+            '<script type="application/json">{}</script>',
+            mark_safe(json_str)
+        )
 
 
-def conditional_escape(text):
-    """
+def conditional_escape(text):    """
     Similar to escape(), except that it doesn't operate on pre-escaped strings.
 
     This function relies on the __html__ convention used both by Django's
