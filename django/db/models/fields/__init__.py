@@ -7,10 +7,23 @@ import uuid
 import warnings
 from base64 import b64decode, b64encode
 from functools import partialmethod, total_ordering
+# Move MyIntWrapper definition here
+class MyIntWrapper(int):
+    def __new__(cls, value):
+        return super().__new__(cls, value)
+# Remove the duplicate definition of MyIntWrapper
+# Remove the duplicate definition of MyIntWrapper
+import copy
+import datetime
+import decimal
+import operator
+import uuid
+import warnings
+from base64 import b64decode, b64encode
+from functools import partialmethod, total_ordering
 
 from django import forms
-from django.apps import apps
-from django.conf import settings
+from django.apps import appsfrom django.conf import settings
 from django.core import checks, exceptions, validators
 from django.db import connection, connections, router
 from django.db.models.constants import LOOKUP_SEP
@@ -2526,15 +2539,16 @@ class AutoFieldMeta(type):
     def __subclasscheck__(self, subclass):
         return subclass in self._subclasses or super().__subclasscheck__(subclass)
 
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return None
+        return MyIntWrapper(value)
 
-class AutoField(AutoFieldMixin, IntegerField, metaclass=AutoFieldMeta):
-
-    def get_internal_type(self):
-        return 'AutoField'
-
-    def rel_db_type(self, connection):
+# Move MyIntWrapper definition here
+class MyIntWrapper(int):
+    def __new__(cls, value):
+        return super().__new__(cls, value)
         return IntegerField().db_type(connection=connection)
-
 
 class BigAutoField(AutoFieldMixin, BigIntegerField):
 
