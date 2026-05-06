@@ -1131,11 +1131,10 @@ class InlineForeignKeyField(Field):
         else:
             orig = self.parent_instance.pk
         if str(value) != str(orig):
-            raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
+            raise ValidationError(self.error_messages['invalid_choice'] % {'value': value}, code='invalid_choice')
         return self.parent_instance
 
-    def has_changed(self, initial, data):
-        return False
+    def has_changed(self, initial, data):        return False
 
 
 class ModelChoiceIteratorValue:
@@ -1188,11 +1187,9 @@ class ModelChoiceField(ChoiceField):
     # This class is a subclass of ChoiceField for purity, but it doesn't
     # actually use any of ChoiceField's implementation.
     default_error_messages = {
-        'invalid_choice': _('Select a valid choice. That choice is not one of'
-                            ' the available choices.'),
+        'invalid_choice': _('Select a valid choice. %(value)s is not one of the available choices.')
     }
     iterator = ModelChoiceIterator
-
     def __init__(self, queryset, *, empty_label="---------",
                  required=True, widget=None, label=None, initial=None,
                  help_text='', to_field_name=None, limit_choices_to=None,
@@ -1284,11 +1281,10 @@ class ModelChoiceField(ChoiceField):
                 value = getattr(value, key)
             value = self.queryset.get(**{key: value})
         except (ValueError, TypeError, self.queryset.model.DoesNotExist):
-            raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
+            raise ValidationError(self.error_messages['invalid_choice'] % {'value': value}, code='invalid_choice')
         return value
 
-    def validate(self, value):
-        return Field.validate(self, value)
+    def validate(self, value):        return Field.validate(self, value)
 
     def has_changed(self, initial, data):
         if self.disabled:
