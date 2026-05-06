@@ -630,21 +630,26 @@ def modelform_factory(
     # creating needs to inherit from the parent's inner meta.
     bases = (form.Meta,) if hasattr(form, "Meta") else ()
     Meta = type("Meta", bases, attrs)
-    if formfield_callback:
-        Meta.formfield_callback = staticmethod(formfield_callback)
+    
+    # Class attributes for the new form class.
+    form_class_attrs = {}
+
+    # Use formfield_callback from Meta if it exists, otherwise use the provided one
+    if hasattr(form, 'Meta') and hasattr(form.Meta, 'formfield_callback'):
+        form_class_attrs["formfield_callback"] = form.Meta.formfield_callback
+    elif formfield_callback:
+        form_class_attrs["formfield_callback"] = formfield_callback
+
     # Give this new form class a reasonable name.
     class_name = model.__name__ + "Form"
 
-    # Class attributes for the new form class.
-    form_class_attrs = {"Meta": Meta, "formfield_callback": formfield_callback}
-
+    # Add Meta to form_class_attrs
+    form_class_attrs["Meta"] = Meta
     if getattr(Meta, "fields", None) is None and getattr(Meta, "exclude", None) is None:
         raise ImproperlyConfigured(
             "Calling modelform_factory without defining 'fields' or "
             "'exclude' explicitly is prohibited."
         )
-
-    # Instantiate type(form) in order to use the same metaclass as form.
     return type(form)(class_name, (form,), form_class_attrs)
 
 

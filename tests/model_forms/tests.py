@@ -3614,3 +3614,35 @@ class ModelToDictTests(TestCase):
         # If data were a QuerySet, it would be reevaluated here and give "red"
         # instead of the original value.
         self.assertEqual(data, [blue])
+
+class ModelFormFactoryCallbackTests(TestCase):
+    def test_formfield_callback_from_meta(self):
+        def custom_callback(field, **kwargs):
+            return forms.CharField(initial='Custom Initial')
+
+        class CustomForm(forms.ModelForm):
+            class Meta:
+                model = Person
+                fields = ['name']
+                formfield_callback = custom_callback
+
+        FormClass = modelform_factory(Person, form=CustomForm)
+        form = FormClass()
+        self.assertEqual(form.fields['name'].initial, 'Custom Initial')
+
+    def test_formfield_callback_priority(self):
+        def meta_callback(field, **kwargs):
+            return forms.CharField(initial='Meta Initial')
+
+        def factory_callback(field, **kwargs):
+            return forms.CharField(initial='Factory Initial')
+
+        class CustomForm(forms.ModelForm):
+            class Meta:
+                model = Person
+                fields = ['name']
+                formfield_callback = meta_callback
+
+        FormClass = modelform_factory(Person, form=CustomForm, formfield_callback=factory_callback)
+        form = FormClass()
+        self.assertEqual(form.fields['name'].initial, 'Meta Initial')

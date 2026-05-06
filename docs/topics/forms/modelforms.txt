@@ -746,6 +746,23 @@ documentation.
 
     >>> Form = modelform_factory(Author, form=AuthorForm, localized_fields=("birth_date",))
 
+The `formfield_callback` can also be specified either in the `Meta` class of the form or as an argument to `modelform_factory`. If both are provided, the `Meta` class takes precedence:
+
+    >>> def custom_callback(field, **kwargs):
+    ...     return forms.CharField(initial='Custom Initial')
+    >>> class AuthorForm(ModelForm):
+    ...     class Meta:
+    ...         model = Author
+    ...         fields = ('name', 'title')
+    ...         formfield_callback = custom_callback
+    >>> Form = modelform_factory(Author, form=AuthorForm)
+    # This will use the formfield_callback from AuthorForm.Meta
+
+    >>> def another_callback(field, **kwargs):
+    ...     return forms.CharField(initial='Another Initial')
+    >>> Form = modelform_factory(Author, form=AuthorForm, formfield_callback=another_callback)
+    # This will still use the formfield_callback from AuthorForm.Meta, not another_callback
+
 .. _model-formsets:
 
 Model formsets
