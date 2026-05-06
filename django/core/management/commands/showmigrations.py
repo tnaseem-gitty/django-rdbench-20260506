@@ -81,6 +81,9 @@ class Command(BaseCommand):
         for app_name in app_names:
             self.stdout.write(app_name, self.style.MIGRATE_LABEL)
             shown = set()
+            if app_name not in loader.migrated_apps:
+                self.stdout.write(" (no migrations)", self.style.MIGRATE_LABEL)
+                continue
             for node in graph.leaf_nodes(app_name):
                 for plan_node in graph.forwards_plan(node):
                     if plan_node not in shown and plan_node[0] == app_name:
