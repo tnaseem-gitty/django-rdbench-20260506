@@ -419,7 +419,7 @@ class SQLCompiler:
                     raise DatabaseError('LIMIT/OFFSET not allowed in subqueries of compound statements.')
                 if compiler.get_order_by():
                     raise DatabaseError('ORDER BY not allowed in subqueries of compound statements.')
-        parts = ()
+        parts = []
         for compiler in compilers:
             try:
                 # If the columns list is limited, then all combined queries
@@ -442,7 +442,7 @@ class SQLCompiler:
                     # already added for all compound queries.
                     elif not features.supports_slicing_ordering_in_compound:
                         part_sql = '({})'.format(part_sql)
-                parts += ((part_sql, part_args),)
+                parts.append((part_sql, part_args))
             except EmptyResultSet:
                 # Omit the empty queryset with UNION and with DIFFERENCE if the
                 # first queryset is nonempty.
@@ -455,11 +455,24 @@ class SQLCompiler:
         if all and combinator == 'union':
             combinator_sql += ' ALL'
         braces = '({})' if features.supports_slicing_ordering_in_compound else '{}'
-        sql_parts, args_parts = zip(*((braces.format(sql), args) for sql, args in parts))
+        sql_parts, args_parts = zip(*parts)
         result = [' {} '.format(combinator_sql).join(sql_parts)]
         params = []
         for part in args_parts:
             params.extend(part)
+        
+        # Add ORDER BY clause for the combined query
+        order_by = self.query.order_by
+        if order_by:
+            ordering = []
+            for field in order_by:
+                if isinstance(field, str):
+                    ordering.append(field.lstrip('-'))
+                elif hasattr(field, 'get_ordering_name'):
+                    ordering.append(field.get_ordering_name())
+            if ordering:
+                result.append('ORDER BY %s' % ', '.join(ordering))
+        
         return result, params
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
