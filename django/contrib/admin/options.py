@@ -1631,13 +1631,17 @@ class ModelAdmin(BaseModelAdmin):
 
     def _get_edited_object_pks(self, request, prefix):
         """Return POST data values of list_editable primary keys."""
-        pk_pattern = re.compile(r'{}-\d+-{}$'.format(prefix, self.model._meta.pk.name))
-        return [value for key, value in request.POST.items() if pk_pattern.match(key)]
-
+        pk_pattern = re.compile(r'{}-\d+-{}$'.format(re.escape(prefix), self.model._meta.pk.name))
+        print(f"PK pattern: {pk_pattern.pattern}")
+        print(f"Request POST items: {list(request.POST.items())}")
+        for key in request.POST.keys():
+            print(f"Checking key: {key}")
+            if pk_pattern.match(key):
+                print(f"Matched key: {key}")
+        return [request.POST[key] for key in request.POST.keys() if pk_pattern.match(key)]
     def _get_list_editable_queryset(self, request, prefix):
         """
-        Based on POST data, return a queryset of the objects that were edited
-        via list_editable.
+        Based on POST data, return a queryset of the objects that were edited        via list_editable.
         """
         object_pks = self._get_edited_object_pks(request, prefix)
         queryset = self.get_queryset(request)
