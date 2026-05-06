@@ -135,11 +135,10 @@ class WhereNode(tree.Node):
                 operator.add,
                 (Case(When(c, then=1), default=0) for c in self.children),
             )
-            rhs = Exact(1, rhs_sum)
+            rhs = Exact(1, rhs_sum % 2)
             return self.__class__([lhs, rhs], AND, self.negated).as_sql(
                 compiler, connection
             )
-
         for child in self.children:
             try:
                 sql, params = compiler.compile(child)

@@ -1,9 +1,8 @@
 from django.db import models
-
+from tests.expressions_case.models import Client
 try:
     from PIL import Image
-except ImportError:
-    Image = None
+except ImportError:    Image = None
 
 
 class CaseTestModel(models.Model):
