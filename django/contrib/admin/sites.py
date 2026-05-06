@@ -453,7 +453,7 @@ class AdminSite:
                 pass
             else:
                 if getattr(match.func, "should_append_slash", True):
-                    return HttpResponsePermanentRedirect("%s/" % request.path)
+                    return HttpResponsePermanentRedirect("%s/%s" % (request.path, ('?' + request.META['QUERY_STRING'] if request.META['QUERY_STRING'] else '')))
         raise Http404
 
     def _build_app_dict(self, request, label=None):
