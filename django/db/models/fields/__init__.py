@@ -21,8 +21,7 @@ from django.utils.dateparse import (
     parse_date, parse_datetime, parse_duration, parse_time,
 )
 from django.utils.duration import duration_microseconds, duration_string
-from django.utils.functional import Promise, cached_property
-from django.utils.ipv6 import clean_ipv6_address
+from django.utils.functional import Promise, cached_property, SimpleLazyObject
 from django.utils.itercompat import is_iterable
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
@@ -1711,30 +1710,46 @@ class FloatField(Field):
 
 
 class IntegerField(Field):
-    empty_strings_allowed = False
-    default_error_messages = {
-        'invalid': _('“%(value)s” value must be an integer.'),
-    }
-    description = _("Integer")
+    def __init__(self, verbose_name=None, name=None, min_value=None, max_value=None, **kwargs):
+        self.min_value, self.max_value = min_value, max_value
+        super().__init__(verbose_name, name, **kwargs)
 
-    def check(self, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *self._check_max_length_warning(),
-        ]
+    @cached_property
+    def validators(self):
+        # These validators can't be added at field initialization time since
+        # they're based on values retrieved from `connection`.
+        range_validators = []
+        internal_type = self.get_internal_type()
+        min_value, max_value = connection.ops.integer_field_range(internal_type)
+        if self.min_value is not None:
+            range_validators.append(validators.MinValueValidator(self.min_value))
+        if self.max_value is not None:
+            range_validators.append(validators.MaxValueValidator(self.max_value))
+        elif max_value is not None:
+            range_validators.append(validators.MaxValueValidator(max_value))
+        return super().validators + range_validators
 
-    def _check_max_length_warning(self):
-        if self.max_length is not None:
-            return [
-                checks.Warning(
-                    "'max_length' is ignored when used with %s." % self.__class__.__name__,
-                    hint="Remove 'max_length' from field",
-                    obj=self,
-                    id='fields.W122',
-                )
-            ]
-        return []
+    def get_prep_value(self, value):
+        if value is None or value == '':
+            return None
+        if isinstance(value, SimpleLazyObject):
+            value = value._wrapped
+        if hasattr(value, 'pk'):
+            return value.pk
+        return int(value)
 
+    def get_db_prep_value(self, value, connection, prepared=False):
+        if not prepared:
+            value = self.get_prep_value(value)
+        return connection.ops.adapt_integerfield_value(value, self.internal_type)
+
+    def formfield(self, **kwargs):
+        return super().formfield(**{
+            'form_class': forms.IntegerField,
+            **kwargs,
+        })
+
+class BigIntegerField(IntegerField):
     @cached_property
     def validators(self):
         # These validators can't be added at field initialization time since
