@@ -1472,11 +1472,16 @@ class _MediaFilesHandler(FSFilesHandler):
     def get_base_url(self):
         return settings.MEDIA_URL
 
+class DatabaseClosingThreadedWSGIServer(ThreadedWSGIServer):
+    def process_request_thread(self, request, client_address):
+        super().process_request_thread(request, client_address)
+        connections.close_all()
+
 
 class LiveServerThread(threading.Thread):
     """Thread for running a live http server while the tests are running."""
 
-    server_class = ThreadedWSGIServer
+    server_class = DatabaseClosingThreadedWSGIServer
 
     def __init__(self, host, static_handler, connections_override=None, port=0):
         self.host = host
