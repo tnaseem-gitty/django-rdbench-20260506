@@ -974,8 +974,21 @@ class MigrationAutodetector:
                     )
                 else:
                     # We cannot alter between m2m and concrete fields
-                    self._generate_removed_field(app_label, model_name, field_name)
-                    self._generate_added_field(app_label, model_name, field_name)
+                    if isinstance(old_field, models.UUIDField) and isinstance(new_field, models.ForeignKey):
+                        print(f"Changing UUIDField to ForeignKey: {app_label}.{model_name}.{field_name}")
+                        # Add dependency for the new ForeignKey
+                        self.add_operation(
+                            app_label,
+                            operations.AddField(
+                                model_name=model_name,
+                                name=field_name,
+                                field=new_field,
+                            ),
+                            dependencies=[(new_field.remote_field.model._meta.app_label, new_field.remote_field.model._meta.model_name, None, None)]
+                        )
+                    else:
+                        self._generate_removed_field(app_label, model_name, field_name)
+                        self._generate_added_field(app_label, model_name, field_name)
 
     def create_altered_indexes(self):
         option_name = operations.AddIndex.option_name
