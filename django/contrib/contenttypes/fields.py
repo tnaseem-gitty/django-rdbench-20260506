@@ -202,12 +202,14 @@ class GenericForeignKey(FieldCacheMixin):
             else:
                 model = self.get_content_type(id=ct_id,
                                               using=obj._state.db).model_class()
-                return (model._meta.pk.get_prep_value(getattr(obj, self.fk_field)),
-                        model)
+                pk_value = getattr(obj, self.fk_field)
+                if isinstance(model._meta.pk, models.UUIDField):
+                    pk_value = str(pk_value)
+                return (pk_value, model)
 
         return (
             ret_val,
-            lambda obj: (obj.pk, obj.__class__),
+            lambda obj: (str(obj.pk) if isinstance(obj._meta.pk, models.UUIDField) else obj.pk, obj.__class__),
             gfk_key,
             True,
             self.name,

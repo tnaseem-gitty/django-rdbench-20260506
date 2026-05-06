@@ -1,0 +1,6 @@
+Fixed GenericForeignKey prefetch_related with UUID primary keys
+
+The get_prefetch_queryset method in GenericForeignKey now correctly handles
+models with UUID primary keys. This fixes an issue where prefetch_related
+was not working properly for GenericForeignKey fields when the related
+model used a UUID as its primary key.
