@@ -24,11 +24,12 @@ class EmptyPage(InvalidPage):
     pass
 
 
-class Paginator:
+    def __iter__(self):
+        for page_num in self.page_range:
+            yield self.page(page_num)
 
     def __init__(self, object_list, per_page, orphans=0,
-                 allow_empty_first_page=True):
-        self.object_list = object_list
+                 allow_empty_first_page=True):        self.object_list = object_list
         self._check_object_list_is_ordered()
         self.per_page = int(per_page)
         self.orphans = int(orphans)
