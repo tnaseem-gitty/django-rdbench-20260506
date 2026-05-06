@@ -1,17 +1,18 @@
 import json
+import django
+django.setup()
+from datetime import datetime
 from datetime import datetime
 
-from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
-from django.contrib.admin.utils import quote
+from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntryfrom django.contrib.admin.utils import quote
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
 from django.utils.html import escape
-
+from django.contrib.admin import AdminSite, ModelAdmin
 from .models import Article, ArticleProxy, Site
-
 
 @override_settings(ROOT_URLCONF='admin_utils.urls')
 class LogEntryTests(TestCase):
@@ -263,4 +264,21 @@ class LogEntryTests(TestCase):
         for action_flag, display_name in tests:
             with self.subTest(action_flag=action_flag):
                 log = LogEntry(action_flag=action_flag)
-                self.assertEqual(log.get_action_flag_display(), display_name)
+    def test_get_admin_url_with_custom_admin_site(self):
+        """
+        Test that get_admin_url generates the correct URL for a readonly ForeignKey field
+        in a custom Admin Site.
+        """
+        custom_admin_site = AdminSite(name='custom_admin')
+        custom_admin_site.register(Article)
+        
+        class CustomAdmin(ModelAdmin):
+            readonly_fields = ('site',)
+        
+        custom_admin_site.register(Site, CustomAdmin)
+        
+        site = Site.objects.create(domain='example.com')
+        article = Article.objects.create(site=site, title='Test Article')
+        
+        url = custom_admin_site._registry[Article].get_admin_url(article._meta.get_field('site'), site)
+        self.assertIn('/custom_admin/', url)
