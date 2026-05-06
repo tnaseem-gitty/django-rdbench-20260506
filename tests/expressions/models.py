@@ -9,6 +9,9 @@ from django.db import models
 class Manager(models.Model):
     name = models.CharField(max_length=50)
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class Employee(models.Model):
     firstname = models.CharField(max_length=50)
@@ -19,9 +22,15 @@ class Employee(models.Model):
     def __str__(self):
         return '%s %s' % (self.firstname, self.lastname)
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class RemoteEmployee(Employee):
     adjusted_salary = models.IntegerField()
+
+    class Meta:
+        app_label = 'expressions'
 
 
 class Company(models.Model):
@@ -44,6 +53,9 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class Number(models.Model):
     integer = models.BigIntegerField(db_column='the_integer')
@@ -51,6 +63,9 @@ class Number(models.Model):
 
     def __str__(self):
         return '%i, %.3f' % (self.integer, self.float)
+
+    class Meta:
+        app_label = 'expressions'
 
 
 class Experiment(models.Model):
@@ -64,6 +79,7 @@ class Experiment(models.Model):
     class Meta:
         db_table = 'expressions_ExPeRiMeNt'
         ordering = ('name',)
+        app_label = 'expressions'
 
     def duration(self):
         return self.end - self.start
@@ -76,12 +92,18 @@ class Result(models.Model):
     def __str__(self):
         return "Result at %s" % self.result_time
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class Time(models.Model):
     time = models.TimeField(null=True)
 
     def __str__(self):
         return str(self.time)
+
+    class Meta:
+        app_label = 'expressions'
 
 
 class SimulationRun(models.Model):
@@ -92,11 +114,19 @@ class SimulationRun(models.Model):
     def __str__(self):
         return "%s (%s to %s)" % (self.midpoint, self.start, self.end)
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class UUIDPK(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
+    class Meta:
+        app_label = 'expressions'
+
 
 class UUID(models.Model):
     uuid = models.UUIDField(null=True)
-    uuid_fk = models.ForeignKey(UUIDPK, models.CASCADE, null=True)
+
+    class Meta:
+        app_label = 'expressions'
