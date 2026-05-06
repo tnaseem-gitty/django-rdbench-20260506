@@ -247,25 +247,27 @@ class AlterField(FieldOperation):
         return "alter_%s_%s" % (self.model_name_lower, self.name_lower)
 
     def reduce(self, operation, app_label):
-        if isinstance(operation, RemoveField) and self.is_same_field_operation(
-            operation
-        ):
+        print(f"Reducing {self} with {operation}")
+        if isinstance(operation, RemoveField) and self.is_same_field_operation(operation):
+            print("Matched RemoveField")
             return [operation]
         elif (
             isinstance(operation, RenameField)
             and self.is_same_field_operation(operation)
             and self.field.db_column is None
         ):
+            print("Matched RenameField")
             return [
                 operation,
-                AlterField(
-                    model_name=self.model_name,
+                AlterField(                    model_name=self.model_name,
                     name=operation.new_name,
                     field=self.field,
                 ),
             ]
+        elif isinstance(operation, AlterField) and self.is_same_field_operation(operation):
+            print("Matched AlterField")
+            return [operation]
         return super().reduce(operation, app_label)
-
 
 class RenameField(FieldOperation):
     """Rename a field on the model. Might affect db_column too."""
