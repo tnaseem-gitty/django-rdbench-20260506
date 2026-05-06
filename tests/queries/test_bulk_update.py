@@ -97,6 +97,16 @@ class BulkUpdateNoteTests(TestCase):
 
     # Tests that use self.notes go here, otherwise put them in another class.
 
+    def test_bulk_update_returns_rows_matched(self):
+        for note in self.notes:
+            note.note = 'updated-%s' % note.id
+        rows_matched = Note.objects.bulk_update(self.notes, ['note'])
+        self.assertIsNotNone(rows_matched, "bulk_update should return a value")
+        self.assertEqual(rows_matched, len(self.notes), "bulk_update should return the number of rows matched")
+        self.assertCountEqual(
+            Note.objects.values_list('note', flat=True),
+            ['updated-%s' % note.id for note in self.notes]
+        )
 
 class BulkUpdateTests(TestCase):
     def test_no_fields(self):

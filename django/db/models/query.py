@@ -527,6 +527,7 @@ class QuerySet:
     def bulk_update(self, objs, fields, batch_size=None):
         """
         Update the given fields in each of the given objects in the database.
+        Returns the number of rows matched by the update operation.
         """
         if batch_size is not None and batch_size < 0:
             raise ValueError('Batch size must be a positive integer.')
@@ -563,9 +564,12 @@ class QuerySet:
                     case_statement = Cast(case_statement, output_field=field)
                 update_kwargs[field.attname] = case_statement
             updates.append(([obj.pk for obj in batch_objs], update_kwargs))
+        total_rows_matched = 0
         with transaction.atomic(using=self.db, savepoint=False):
             for pks, update_kwargs in updates:
-                self.filter(pk__in=pks).update(**update_kwargs)
+                rows_matched = self.filter(pk__in=pks).update(**update_kwargs)
+                total_rows_matched += rows_matched
+        return total_rows_matched
     bulk_update.alters_data = True
 
     def get_or_create(self, defaults=None, **kwargs):
