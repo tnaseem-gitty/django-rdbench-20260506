@@ -550,11 +550,44 @@ class Query(BaseExpression):
         Perform a COUNT() query using the current filter constraints.
         """
         obj = self.clone()
+        # Remove unused annotations
+        used_annotations = set()
+        used_annotations.update(self._get_used_annotations_in_filters())
+        used_annotations.update(self._get_used_annotations_in_annotations())
+        used_annotations.update(self._get_used_annotations_in_ordering())
+        obj.annotation_select = {k: v for k, v in obj.annotation_select.items() if k in used_annotations}
         obj.add_annotation(Count("*"), alias="__count", is_summary=True)
         return obj.get_aggregation(using, ["__count"])["__count"]
 
     def has_filters(self):
         return self.where
+
+    def _get_used_annotations_in_filters(self):
+        used = set()
+        for node in self.where.children:
+            if hasattr(node, 'lhs') and isinstance(node.lhs, F):
+                used.add(node.lhs.name)
+        return used
+
+    def _get_used_annotations_in_annotations(self):
+        used = set()
+        for annotation in self.annotation_select.values():
+            if isinstance(annotation, F):
+                used.add(annotation.name)
+            elif hasattr(annotation, 'get_source_expressions'):
+                for expr in annotation.get_source_expressions():
+                    if isinstance(expr, F):
+                        used.add(expr.name)
+        return used
+
+    def _get_used_annotations_in_ordering(self):
+        used = set()
+        for ordering in self.order_by:
+            if isinstance(ordering, F):
+                used.add(ordering.name)
+            elif isinstance(ordering, str) and ordering.lstrip('-') in self.annotation_select:
+                used.add(ordering.lstrip('-'))
+        return used
 
     def exists(self, limit=True):
         q = self.clone()

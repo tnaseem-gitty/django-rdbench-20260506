@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.core.exceptions import FieldError
 from django.db import DEFAULT_DB_ALIAS, connection
-from django.db.models import BooleanField, CharField, F, Q
+from django.db.models import BooleanField, CharField, Count, F, Q
 from django.db.models.expressions import (
     Col,
     Exists,
@@ -20,7 +20,7 @@ from django.db.models.sql.where import AND, OR
 from django.test import SimpleTestCase, TestCase, skipUnlessDBFeature
 from django.test.utils import register_lookup
 
-from .models import Author, Item, ObjectC, Ranking
+from .models import Author, Book, Item, ObjectC, Ranking
 
 
 class TestQuery(SimpleTestCase):
@@ -159,6 +159,13 @@ class TestQuery(SimpleTestCase):
         msg = "Cannot filter against a non-conditional expression."
         with self.assertRaisesMessage(TypeError, msg):
             query.build_where(Func(output_field=CharField()))
+
+    def test_unused_annotation_removal(self):
+        query = Query(Book)
+        query.add_annotation(Count('chapters'), 'chapter_count')
+        sql, params = query.get_compiler().as_sql()
+        self.assertNotIn('chapter_count', sql)
+        self.assertNotIn('COUNT', sql)
 
 
 class TestQueryNoModel(TestCase):
