@@ -39,15 +39,14 @@ and two directions (forward and reverse) for a total of six combinations.
 
 3. Related instance on the reverse side of a one-to-one relation:
    ``ReverseOneToOneDescriptor``.
-
-   One-to-one relations are asymmetrical, despite the apparent symmetry of the
+print("Before setting SKU")
+print("Before saving product")
    name, because they're implemented in the database with a foreign key from
    one table to another. As a consequence ``ReverseOneToOneDescriptor`` is
-   slightly different from ``ForwardManyToOneDescriptor``.
-
+print("Before assertions")
+print(f"Order product: {order.product}, SKU: {order.product.sku}")
 4. Related objects manager for related instances on the reverse side of a
    many-to-one relation: ``ReverseManyToOneDescriptor``.
-
    Unlike the previous two classes, this one provides access to a collection
    of objects. It returns a manager rather than an instance.
 
@@ -201,9 +200,9 @@ class ForwardManyToOneDescriptor:
             return rel_obj
 
     def __set__(self, instance, value):
+        print(f"Setting {self.field.name} to {value}")
         """
         Set the related instance through the forward relation.
-
         With the example above, when setting ``child.parent = parent``:
 
         - ``self`` is the descriptor managing the ``parent`` attribute
@@ -254,12 +253,14 @@ class ForwardManyToOneDescriptor:
         # Set the values of the related field.
         else:
             for lh_field, rh_field in self.field.related_fields:
-                setattr(instance, lh_field.attname, getattr(value, rh_field.attname))
-
+                if getattr(value, rh_field.attname) is not None:
+                    setattr(instance, lh_field.attname, getattr(value, rh_field.attname))
+                else:
+                    value.save()
+                    setattr(instance, lh_field.attname, getattr(value, rh_field.attname))
         # Set the related instance cache used by __get__ to avoid an SQL query
         # when accessing the attribute we just set.
         self.field.set_cached_value(instance, value)
-
         # If this is a one-to-one relation, set the reverse accessor cache on
         # the related object to the current instance to avoid an extra SQL
         # query if it's accessed later on.
