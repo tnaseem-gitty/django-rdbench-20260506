@@ -6,20 +6,19 @@ from django.db.models.functions import Now
 
 
 class DumbCategory(models.Model):
-    pass
+    class Meta:
+        app_label = 'queries'
 
 
 class ProxyCategory(DumbCategory):
     class Meta:
-        proxy = True
-
+        app_label = 'queries'
 
 class NamedCategory(DumbCategory):
-    name = models.CharField(max_length=10)
-
+    class Meta:
+        app_label = 'queries'
     def __str__(self):
         return self.name
-
 
 class Tag(models.Model):
     name = models.CharField(max_length=10)
