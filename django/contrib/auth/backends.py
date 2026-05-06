@@ -37,6 +37,8 @@ class ModelBackend(BaseBackend):
     """
 
     def authenticate(self, request, username=None, password=None, **kwargs):
+        if username is None and password is None:
+            return None
         if username is None:
             username = kwargs.get(UserModel.USERNAME_FIELD)
         try:
