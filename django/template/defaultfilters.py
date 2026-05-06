@@ -155,11 +155,10 @@ def floatformat(text, arg=-1):
         d = Decimal(input_val)
     except InvalidOperation:
         try:
-            d = Decimal(str(float(text)))
+            d = Decimal(text)
         except (ValueError, InvalidOperation, TypeError):
             return ""
-    try:
-        p = int(arg)
+    try:        p = int(arg)
     except ValueError:
         return input_val
 
