@@ -1,23 +1,40 @@
-"""
-SQLite backend for the sqlite3 module in the standard library.
-"""
+from django.db import models
+from django.db.models import F
 import datetime
-import decimal
-import functools
-import hashlib
-import json
-import math
-import operator
-import re
-import statistics
-import warnings
-from itertools import chain
-from sqlite3 import dbapi2 as Database
 
-import pytz
+# Set up Django
+import django
+from django.conf import settings
+settings.configure(
+    DATABASES={'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}},
+    INSTALLED_APPS=['django.contrib.contenttypes', 'django.contrib.auth'],
+    DEFAULT_AUTO_FIELD='django.db.models.AutoField',
+)
+django.setup()
 
-from django.core.exceptions import ImproperlyConfigured
-from django.db import IntegrityError
+class Experiment(models.Model):
+    estimated_time = models.DurationField()
+
+    class Meta:
+        app_label = 'auth'
+
+# Create the table in the database
+from django.core.management import call_command
+call_command('makemigrations', verbosity=0, interactive=False)
+call_command('migrate', verbosity=0, interactive=False)
+
+# Create a sample experiment
+Experiment.objects.create(estimated_time=datetime.timedelta(milliseconds=345))
+
+# Try to annotate with a duration expression
+delta = datetime.timedelta(days=1)
+result = list(Experiment.objects.annotate(duration=F('estimated_time') + delta))
+
+print(f"Result: {result[0].duration}")
+print(f"Expected: {datetime.timedelta(days=1, milliseconds=345)}")
+print(f"Are they equal? {result[0].duration == datetime.timedelta(days=1, milliseconds=345)}")
+
+print("Script completed.")
 from django.db.backends import utils as backend_utils
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.utils import timezone
@@ -549,19 +566,31 @@ def _sqlite_format_dtdelta(conn, lhs, rhs):
     LHS and RHS can be either:
     - An integer number of microseconds
     - A string representing a datetime
+    - A timedelta object
     """
     try:
-        real_lhs = datetime.timedelta(0, 0, lhs) if isinstance(lhs, int) else backend_utils.typecast_timestamp(lhs)
-        real_rhs = datetime.timedelta(0, 0, rhs) if isinstance(rhs, int) else backend_utils.typecast_timestamp(rhs)
+        if isinstance(lhs, datetime.timedelta):
+            real_lhs = lhs
+        elif isinstance(lhs, int):
+            real_lhs = datetime.timedelta(microseconds=lhs)
+        else:
+            real_lhs = backend_utils.typecast_timestamp(lhs)
+
+        if isinstance(rhs, datetime.timedelta):
+            real_rhs = rhs
+        elif isinstance(rhs, int):
+            real_rhs = datetime.timedelta(microseconds=rhs)
+        else:
+            real_rhs = backend_utils.typecast_timestamp(rhs)
+
         if conn.strip() == '+':
             out = real_lhs + real_rhs
         else:
             out = real_lhs - real_rhs
     except (ValueError, TypeError):
         return None
-    # typecast_timestamp returns a date or a datetime without timezone.
-    # It will be formatted as "%Y-%m-%d" or "%Y-%m-%d %H:%M:%S[.%f]"
-    return str(out)
+    # Return the timedelta object directly
+    return out
 
 
 @none_guard

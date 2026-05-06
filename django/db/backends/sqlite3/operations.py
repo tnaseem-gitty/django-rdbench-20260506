@@ -342,7 +342,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         fn_params = ["'%s'" % connector] + sub_expressions
         if len(fn_params) > 3:
             raise ValueError('Too many params for timedelta operations.')
-        return "django_format_dtdelta(%s)" % ', '.join(fn_params)
+        return "CAST(django_format_dtdelta(%s) AS INTEGER)" % ', '.join(fn_params)
 
     def integer_field_range(self, internal_type):
         # SQLite doesn't enforce any integer constraints
