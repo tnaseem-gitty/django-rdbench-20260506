@@ -33,6 +33,9 @@ class Paginator:
         self.per_page = int(per_page)
         self.orphans = int(orphans)
         self.allow_empty_first_page = allow_empty_first_page
+    def __iter__(self):
+        for page_num in self.page_range:
+            yield self.page(page_num)
 
     def validate_number(self, number):
         """Validate the given 1-based page number."""
