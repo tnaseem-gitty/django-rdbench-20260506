@@ -1501,11 +1501,10 @@ class DecimalField(Field):
             return self.context.create_decimal_from_float(value)
         try:
             return decimal.Decimal(value)
-        except decimal.InvalidOperation:
+        except (decimal.InvalidOperation, TypeError):
             raise exceptions.ValidationError(
                 self.error_messages['invalid'],
-                code='invalid',
-                params={'value': value},
+                code='invalid',                params={'value': value},
             )
 
     def get_db_prep_save(self, value, connection):
