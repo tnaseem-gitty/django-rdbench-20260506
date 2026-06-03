@@ -64,10 +64,12 @@ class Q(tree.Node):
     def __and__(self, other):
         return self._combine(other, self.AND)
 
+    def __rand__(self, other):
+        return self._combine(other, self.AND)
+
     def __invert__(self):
         obj = type(self)()
-        obj.add(self, self.AND)
-        obj.negate()
+        obj.add(self, self.AND)        obj.negate()
         return obj
 
     def resolve_expression(self, query=None, allow_joins=True, reuse=None, summarize=False, for_save=False):
