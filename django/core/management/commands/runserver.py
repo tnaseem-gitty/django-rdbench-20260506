@@ -48,9 +48,14 @@ class Command(BaseCommand):
             help='Tells Django to NOT use threading.',
         )
         parser.add_argument(
-            '--noreload', action='store_false', dest='use_reloader',
-            help='Tells Django to NOT use the auto-reloader.',
+            '--skip-checks', action='store_true',
+            help='Skip system checks.',
         )
+        parser.set_defaults(skip_checks=False)
+
+        parser.add_argument(
+            '--noreload', action='store_false', dest='use_reloader',
+            help='Tells Django to NOT use the auto-reloader.',        )
 
     def execute(self, *args, **options):
         if options['no_color']:
@@ -60,9 +65,12 @@ class Command(BaseCommand):
             os.environ["DJANGO_COLORS"] = "nocolor"
         super().execute(*args, **options)
 
+    def check(self, **kwargs):
+        if self.requires_system_checks and not kwargs.get('skip_checks', False):
+            super().check(**kwargs)
+
     def get_handler(self, *args, **options):
-        """Return the default WSGI handler for the runner."""
-        return get_internal_wsgi_application()
+        """Return the default WSGI handler for the runner."""        return get_internal_wsgi_application()
 
     def handle(self, *args, **options):
         if not settings.DEBUG and not settings.ALLOWED_HOSTS:
