@@ -101,10 +101,13 @@ class URLValidator(RegexValidator):
     def __call__(self, value):
         if not isinstance(value, str):
             raise ValidationError(self.message, code=self.code, params={'value': value})
+        # Reject URLs containing newlines and tabs (bpo-43882)
+        if any(char in value for char in '\r\n\t'):
+            raise ValidationError(self.message, code=self.code, params={'value': value})
+
         # Check if the scheme is valid.
         scheme = value.split('://')[0].lower()
-        if scheme not in self.schemes:
-            raise ValidationError(self.message, code=self.code, params={'value': value})
+        if scheme not in self.schemes:            raise ValidationError(self.message, code=self.code, params={'value': value})
 
         # Then check full URL
         try:
